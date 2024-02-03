@@ -31,7 +31,6 @@ module mpi_subdomain
 
     implicit none
     
-    integer :: ierr
     !> @{ Grid numbers in the subdomain
     integer, public :: nx_sub,ny_sub,nz_sub
     !> @}
@@ -101,7 +100,10 @@ module mpi_subdomain
         allocate( y_sub(0:ny_sub), dmy_sub(0:ny_sub))
         allocate( z_sub(0:nz_sub), dmz_sub(0:nz_sub))
         
-        allocate( thetaBC3_sub(0:nx_sub, 0:nz_sub), thetaBC4_sub(0:nx_sub, 0:nz_sub))
+        allocate( thetaBC3_sub(0:nx_sub, 0:nz_sub) )
+        allocate( thetaBC4_sub(0:nx_sub, 0:nz_sub) )
+        thetaBC3_sub = 0.0d0
+        thetaBC4_sub = 0.0d0
 
         allocate(jmbc_index(0:ny_sub),jpbc_index(0:ny_sub))
 
@@ -386,30 +388,30 @@ module mpi_subdomain
         integer :: i,k
 
         ! Normal subdomain: Assign values of ghostcells to the boundary variables.
-		do k = 0, nz_sub
-			do i = 0, nx_sub
-				thetaBC3_sub(i,k) = theta_sub(i,    0,k)
-				thetaBC4_sub(i,k) = theta_sub(i,ny_sub,k)
-			end do
-		end do  
+        do k = 0, nz_sub
+            do i = 0, nx_sub
+                thetaBC3_sub(i,k) = theta_sub(i,    0,k)
+                thetaBC4_sub(i,k) = theta_sub(i,ny_sub,k)
+            end do
+        end do  
 
-		! Lower boundary subdomain: Assign lower boundary condition to the boundary variables.
+        ! Lower boundary subdomain: Assign lower boundary condition to the boundary variables.
         if(myrank_in_y==0) then
             do k = 0, nz_sub
                 do i = 0, nx_sub
                     thetaBC3_sub(i,k) = theta_hot
                 end do
             end do  
-		endif
+        endif
 
-		! Upper boundary subdomain: Assign upper boundary condition to the boundary variables.
+        ! Upper boundary subdomain: Assign upper boundary condition to the boundary variables.
         if(myrank_in_y==nprocs_in_y-1) then
             do k = 0, nz_sub
                 do i = 0, nx_sub
                     thetaBC4_sub(i,k) = theta_cold
                 end do
             end do
-		endif
+        endif
 
         return    
     end subroutine mpi_subdomain_boundary

@@ -65,7 +65,7 @@ module global
     double precision :: Ct                      !< Thermal diffusivity
 
 #ifdef _CUDA
-	! Thread for cuda
+    ! Thread for cuda
     integer :: thread_in_x, thread_in_y, thread_in_z, thread_in_x_pascal, thread_in_y_pascal
 #endif
     
@@ -90,9 +90,9 @@ module global
         namelist /threads/ thread_in_x, thread_in_y, thread_in_z, thread_in_x_pascal, thread_in_y_pascal
 #endif
 
-		arg_cnt = command_argument_count()
+        arg_cnt = command_argument_count()
 
-		if(arg_cnt.ne.1) then
+        if(arg_cnt.ne.1) then
             print *, 'Input file name is not defined. Usage:"mpirun -np number exe_file input_file" '
             stop
         endif
@@ -103,9 +103,9 @@ module global
             read (1, procs)
             read (1, time)
 #ifdef _CUDA
-			read (1, threads)
+            read (1, threads)
 #endif
-			close (1)
+            close (1)
 
         np_dim(0) = npx
         np_dim(1) = npy

@@ -211,3 +211,110 @@ subroutine tdma_cycl_many(a, b, c, d, n1, n2)
     deallocate(e,rr)
 
 end subroutine tdma_cycl_many
+
+
+!>
+!> @brief       Solve many tridiagonal systems of equations using the Thomas algorithm.
+!>              First index indicates the number of independent many tridiagonal systems to use vectorization.
+!>              Second index indicates the row number in the tridiagonal system .
+!> @param       a       Coefficient array in lower diagonal elements
+!> @param       b       Coefficient array in diagonal elements
+!> @param       c       Coefficient array in upper diagonal elements
+!> @param       d       Coefficient array in the right-hand side terms
+!> @param       n1      Number of tridiagonal systems per process
+!> @param       n2      Number of rows in each process, size of the tridiagonal matrix N divided by nprocs
+!>
+subroutine tdma_many_rhs(a, b, c, d, n1, n2)
+
+    implicit none
+
+    integer, intent(in) :: n1,n2
+    double precision, intent(inout) :: a(n2), b(n2), c(n2), d(n1,n2)
+    
+    integer :: i,j
+    double precision :: r
+
+    do i=1,n1
+        d(i,1)=d(i,1)/b(1)
+    enddo
+    c(1)=c(1)/b(1)
+
+    do j=2,n2
+        r=1.d0/(b(j)-a(j)*c(j-1))
+        do i=1,n1
+            d(i,j)=r*(d(i,j)-a(j)*d(i,j-1))
+        enddo
+        c(j)=r*c(j)
+    enddo
+
+    do j=n2-1,1,-1
+        do i=1,n1
+            d(i,j)=d(i,j)-c(j)*d(i,j+1)
+        enddo
+    enddo
+
+end subroutine tdma_many_rhs
+
+!>
+!> @brief       Solve many cyclic tridiagonal systems of equations using the Thomas algorithm.
+!>              First index indicates the number of independent many tridiagonal systems to use vectorization.
+!>              Second index indicates the row number in the tridiagonal system.
+!> @param       a       Coefficient array in lower diagonal elements
+!> @param       b       Coefficient array in diagonal elements
+!> @param       c       Coefficient array in upper diagonal elements
+!> @param       d       Coefficient array in the right-hand side terms
+!> @param       n1      Number of tridiagonal systems per process
+!> @param       n2      Number of rows in each process, size of the tridiagonal matrix N divided by nprocs
+!>
+subroutine tdma_cycl_many_rhs(a, b, c, d, n1, n2)
+
+    implicit none
+
+    integer, intent(in) :: n1,n2
+    double precision, intent(inout) :: a(n2), b(n2), c(n2), d(n1,n2)
+    
+    integer :: i,j
+    double precision, allocatable, dimension(:) :: e
+    double precision :: rr
+
+    allocate(e(1:n2))
+
+    e(:)=0
+    e(2 ) = -a(2 )
+    e(n2) = -c(n2)
+
+    do i=1,n1
+        d(i,2)=d(i,2)/b(2)
+        e(2)=e(2)/b(2)
+        c(2)=c(2)/b(2)
+    enddo
+
+    do j=3,n2
+        rr=1.d0/(b(j)-a(j)*c(j-1))
+        do i=1,n1
+            d(i,j)=rr*(d(i,j)-a(j)*d(i,j-1))
+        enddo
+        e(j)=rr*(e(j)-a(j)*e(j-1))
+        c(j)=rr*c(j)
+    enddo
+
+    do j=n2-1,2,-1
+        do i=1,n1
+            d(i,j)=d(i,j)-c(j)*d(i,j+1)
+        enddo
+        e(j)=e(j)-c(j)*e(j+1)
+    enddo
+
+    do i=1,n1
+        d(i,1)=(d(i,1)-a(1)*d(i,n2)-c(1)*d(i,2))/(b(1)+a(1)*e(n2)+c(1)*e(2))
+    enddo
+
+    do j = 2,n2
+        do i=1,n1
+            d(i,j) = d(i,j) + d(i,1)*e(j)
+        enddo
+    end do
+    
+    deallocate(e)
+
+end subroutine tdma_cycl_many_rhs

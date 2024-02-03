@@ -19,16 +19,17 @@
 
 FC = mpifort
 
-FLAG  = -O3 -fPIC -cpp 
-FLAG += -tp=skylake 
+FLAG  = -fcheck=all -Og -g -cpp -Wall -fbacktrace -pedantic
+#FLAG  = -O3 -fPIC -cpp 
+#FLAG += -tp=skylake 
 
 ###############################################################################
 # To use CUDA
 # PaScaL_TDMA is compiled for CUDA also.
 ###############################################################################
 
-USE_CUDA = yes
-FLAG += -mp:multicore -Mcuda -Minfo=accel 
+#USE_CUDA = yes
+#FLAG += -mp:multicore -Mcuda -Minfo=accel 
 #FLAG += -DUSE_NVTX
 
 

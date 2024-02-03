@@ -30,3 +30,10 @@
 *.exe
 *.out
 *.app
+
+# output
+*.PLT
+*.dat
+
+# vscode
+.vscode
