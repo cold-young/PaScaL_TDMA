@@ -3,6 +3,7 @@
 # Modify flags according to the system and environment
 ###############################################################################
 
+HOME := /Users/jihoon/Develop/PaScaL_TDMA
 # FC = mpiifort
 
 # FLAG  = -O3 -fPIC -cpp

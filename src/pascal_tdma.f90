@@ -441,7 +441,7 @@ module PaScaL_TDMA
     subroutine PaScaL_TDMA_plan_many_rhs_destroy(plan,nprocs)
         implicit none
 
-        type(ptdma_plan_many), intent(inout)  :: plan
+        type(ptdma_plan_many_rhs), intent(inout)  :: plan
         integer :: i,nprocs,ierr
 
         do i=0,nprocs-1
