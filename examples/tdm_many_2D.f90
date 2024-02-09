@@ -9,20 +9,23 @@ program main
     integer :: Nx = 100, Ny = 100
     integer :: nx_sub, ny_sub, n_sub
     integer :: nprocs, myrank, ierr
-    integer :: ista, iend
     integer :: npx
-    integer :: i, j, iblk
+    integer :: para_range_n
     integer, allocatable, dimension(:) :: cnt_x, disp_x, cnt_y, disp_y, cnt_all, disp_all
+    logical :: is_root = .false.
 
-    double precision, allocatable, dimension(:,:) :: a, b, c, d, x, y
+    double precision, allocatable, dimension(:,:) :: d, x
     double precision, allocatable, dimension(:,:) :: a_sub, b_sub, c_sub, d_sub, d_sub_tr
-    double precision, allocatable, dimension(:)   :: d_blk
 
     type(ptdma_plan_many) :: px_many, py_many   ! Plan for many tridiagonal systems of equations
 
     call MPI_Init(ierr)
     call MPI_Comm_size(MPI_COMM_WORLD, nprocs, ierr)
     call MPI_Comm_rank(MPI_COMM_WORLD, myrank, ierr)
+
+    if (myrank.eq.0) then
+        is_root = .true.
+    endif
 
     call MPI_Dims_create(nprocs, 2, np_dim, ierr)
 
@@ -33,52 +36,105 @@ program main
 
     npx = np_dim(0)
 
-    call para_range(1, nx, comm_1d_x%nprocs, comm_1d_x%myrank, ista, iend)
-    nx_sub = iend - ista + 1
-
-    call para_range(1, ny, comm_1d_y%nprocs, comm_1d_y%myrank, ista, iend)
-    ny_sub = iend - ista + 1
+    nx_sub = para_range_n(1, nx, comm_1d_x%nprocs, comm_1d_x%myrank)
+    ny_sub = para_range_n(1, ny, comm_1d_y%nprocs, comm_1d_y%myrank)
 
     n_sub = nx_sub * ny_sub
 
-    allocate ( a(Nx, Ny) ); a(:,:) = 1
-    allocate ( b(Nx, Ny) ); b(:,:) = 2
-    allocate ( c(Nx, Ny) ); c(:,:) = 1
-    allocate ( d(Nx, Ny) ); d(:,:) = 0
-    allocate ( x(Nx, Ny) ); x(:,:) = 0
-    allocate ( y(Nx, Ny) ); y(:,:) = 0
-    allocate ( d_blk(Nx * Ny) ); d_blk(:) = 0
-
-    allocate ( cnt_x(np_dim(0)) );  cnt_x(:) = 0
-    allocate ( cnt_y(np_dim(1)) );  cnt_y(:) = 0
-    allocate ( cnt_all(nprocs) );   cnt_all(:) = 0
-    allocate ( disp_x(np_dim(0)) ); disp_x(:) = 0
-    allocate ( disp_y(np_dim(1)) ); disp_y(:) = 0
-    allocate ( disp_all(nprocs) );  disp_all(:) = 0
-
-    ! Build cnt and disp array
-    call MPI_Allgather(nx_sub, 1, MPI_INTEGER, cnt_x,   1, MPI_INTEGER, comm_1d_x%mpi_comm, ierr)
-    call MPI_Allgather(ny_sub, 1, MPI_INTEGER, cnt_y,   1, MPI_INTEGER, comm_1d_y%mpi_comm, ierr)
-    call MPI_Allgather(n_sub,  1, MPI_INTEGER, cnt_all, 1, MPI_INTEGER, MPI_COMM_WORLD, ierr)
-
-    disp_x(1) = 0
-    do i = 2, size(cnt_x)
-        disp_x(i) = disp_x(i - 1) + cnt_x(i - 1)
-    enddo
-
-    disp_y(1) = 0
-    do i = 2, size(cnt_y)
-        disp_y(i) = disp_y(i - 1) + cnt_y(i - 1)
-    enddo
-
-    disp_all(1) = 0
-    do i = 2, nprocs
-        disp_all(i) = disp_all(i - 1) + cnt_all(i - 1)
-    enddo
+    call build_comm_info_array()
 
     ! Generate random x vector and rhs vector in rank 0
-    if (myrank.eq.0) then
+    if (is_root) then
+        allocate ( d(Nx, Ny) ); d(:,:) = 0
+        allocate ( x(Nx, Ny) ); x(:,:) = 0
+        call build_global_coeff_array()
+    endif
 
+    call distribute_rhs_array()
+
+    ! Solve equation in y-direction
+    allocate ( a_sub(nx_sub, ny_sub) ); a_sub(:,:) = 1
+    allocate ( b_sub(nx_sub, ny_sub) ); b_sub(:,:) = 2
+    allocate ( c_sub(nx_sub, ny_sub) ); c_sub(:,:) = 1
+
+    call PaScaL_TDMA_plan_many_create(py_many, nx_sub, comm_1d_y%myrank, comm_1d_y%nprocs, comm_1d_y%mpi_comm)
+    call PaScaL_TDMA_many_solve(py_many, a_sub, b_sub, c_sub, d_sub, nx_sub, ny_sub)
+    call PaScaL_TDMA_plan_many_destroy(py_many, comm_1d_y%nprocs)
+
+    ! Solve equation in x-direction
+    a_sub(:,:) = 1
+    b_sub(:,:) = 2
+    c_sub(:,:) = 1
+
+    allocate ( d_sub_tr(ny_sub, nx_sub) ); d_sub_tr(:,:) = 0
+
+    d_sub_tr = transpose( d_sub )
+
+    call PaScaL_TDMA_plan_many_create(px_many, ny_sub, comm_1d_x%myrank, comm_1d_x%nprocs, comm_1d_x%mpi_comm)
+    call PaScaL_TDMA_many_solve(px_many, a_sub, b_sub, c_sub, d_sub_tr, ny_sub, nx_sub)
+    call PaScaL_TDMA_plan_many_destroy(px_many, comm_1d_x%nprocs)
+
+    d_sub = transpose( d_sub_tr )
+
+    deallocate ( d_sub_tr )
+
+    call collect_solution_array()
+
+    if (is_root) then
+        print *, "Avg. norm2 (norm2 / (nx * ny)) = ", norm2(d - x) / nx / ny
+    endif
+
+    call dealloc_all()
+
+    call mpi_topology_clean
+
+    call MPI_Finalize(ierr)
+
+contains
+
+    subroutine build_comm_info_array
+
+        integer :: i
+
+        allocate ( cnt_x(np_dim(0)) );  cnt_x(:) = 0
+        allocate ( cnt_y(np_dim(1)) );  cnt_y(:) = 0
+        allocate ( cnt_all(nprocs) );   cnt_all(:) = 0
+        allocate ( disp_x(np_dim(0)) ); disp_x(:) = 0
+        allocate ( disp_y(np_dim(1)) ); disp_y(:) = 0
+        allocate ( disp_all(nprocs) );  disp_all(:) = 0
+    
+        ! Build cnt and disp array
+        call MPI_Allgather(nx_sub, 1, MPI_INTEGER, cnt_x,   1, MPI_INTEGER, comm_1d_x%mpi_comm, ierr)
+        call MPI_Allgather(ny_sub, 1, MPI_INTEGER, cnt_y,   1, MPI_INTEGER, comm_1d_y%mpi_comm, ierr)
+        call MPI_Allgather(n_sub,  1, MPI_INTEGER, cnt_all, 1, MPI_INTEGER, MPI_COMM_WORLD, ierr)
+    
+        disp_x(1) = 0
+        do i = 2, size(cnt_x)
+            disp_x(i) = disp_x(i - 1) + cnt_x(i - 1)
+        enddo
+    
+        disp_y(1) = 0
+        do i = 2, size(cnt_y)
+            disp_y(i) = disp_y(i - 1) + cnt_y(i - 1)
+        enddo
+    
+        disp_all(1) = 0
+        do i = 2, nprocs
+            disp_all(i) = disp_all(i - 1) + cnt_all(i - 1)
+        enddo
+    
+    end subroutine build_comm_info_array
+
+    subroutine build_global_coeff_array
+
+        integer :: i, j
+        double precision, allocatable, dimension(:,:) :: a, b, c, y
+
+        allocate ( a(Nx, Ny) ); a(:,:) = 1
+        allocate ( b(Nx, Ny) ); b(:,:) = 2
+        allocate ( c(Nx, Ny) ); c(:,:) = 1
+        allocate ( y(Nx, Ny) ); y(:,:) = 0
+    
         call random_number(x(:,:))
 
         ! y = A_x * x
@@ -102,84 +158,92 @@ program main
         do i = 1, nx
             d(i, ny) = a(i, ny) * y(i, ny - 1) + b(i, ny) * y(i, ny)
         enddo
+        deallocate (a, b, c, y)
 
-        do iblk = 1, npx
-            do j = 1, ny
-                do i = 1, cnt_x(iblk)
-                    d_blk(i + (j - 1) * cnt_x(iblk) + disp_x(iblk) * ny) &
-                        = d(i + disp_x(iblk), j)
+    end subroutine build_global_coeff_array
+
+    subroutine distribute_rhs_array
+
+        integer :: i, j, iblk
+        double precision, allocatable, dimension(:)   :: d_blk
+
+        ! Scatter rhs vector
+        if (is_root) then
+            allocate ( d_blk(Nx * Ny) ); d_blk(:) = 0
+            do iblk = 1, npx
+                do j = 1, ny
+                    do i = 1, cnt_x(iblk)
+                        d_blk(i + (j - 1) * cnt_x(iblk) + disp_x(iblk) * ny) &
+                            = d(i + disp_x(iblk), j)
+                    enddo
                 enddo
             enddo
-        enddo
-    endif
+        endif
 
-    ! Main solver part
-    allocate ( a_sub(nx_sub, ny_sub) ); a_sub(:,:) = 1
-    allocate ( b_sub(nx_sub, ny_sub) ); b_sub(:,:) = 2
-    allocate ( c_sub(nx_sub, ny_sub) ); c_sub(:,:) = 1
-    allocate ( d_sub(nx_sub, ny_sub) ); d_sub(:,:) = 0
-    allocate ( d_sub_tr(ny_sub, nx_sub) ); d_sub_tr(:,:) = 0
+        allocate ( d_sub(nx_sub, ny_sub) ); d_sub(:,:) = 0
+        call MPI_Scatterv(d_blk, cnt_all, disp_all, MPI_DOUBLE_PRECISION, d_sub, n_sub, &
+                            MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
+        if (is_root) then
+            deallocate( d_blk )
+        endif
 
-    ! Scatter rhs vector
-    call MPI_Scatterv(d_blk, cnt_all, disp_all, MPI_DOUBLE_PRECISION, d_sub, n_sub, &
-                      MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
+    end subroutine distribute_rhs_array
 
-    ! Solve equation in y-direction
-    call PaScaL_TDMA_plan_many_create(py_many, nx_sub, comm_1d_y%myrank, comm_1d_y%nprocs, comm_1d_y%mpi_comm)
-    call PaScaL_TDMA_many_solve(py_many, a_sub, b_sub, c_sub, d_sub, nx_sub, ny_sub)
-    call PaScaL_TDMA_plan_many_destroy(py_many, comm_1d_y%nprocs)
+    subroutine collect_solution_array
 
+        integer :: i, j, iblk
+        double precision, allocatable, dimension(:)   :: d_blk
 
-    ! Solve equation in x-direction
-    a_sub(:,:) = 1
-    b_sub(:,:) = 2
-    c_sub(:,:) = 1
+        if (is_root) then
+            allocate ( d_blk(Nx * Ny) ); d_blk(:) = 0
+        endif
 
-    do j = 1, ny_sub
-        do i = 1, nx_sub
-            d_sub_tr(j, i) = d_sub(i, j)
-        enddo
-    enddo
+        ! Gather solution and evaluate norm2
+        call MPI_Gatherv(d_sub, n_sub, MPI_DOUBLE_PRECISION, d_blk, cnt_all, disp_all, &
+                        MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
 
-    call PaScaL_TDMA_plan_many_create(px_many, ny_sub, comm_1d_x%myrank, comm_1d_x%nprocs, comm_1d_x%mpi_comm)
-    call PaScaL_TDMA_many_solve(px_many, a_sub, b_sub, c_sub, d_sub_tr, ny_sub, nx_sub)
-    call PaScaL_TDMA_plan_many_destroy(px_many, comm_1d_x%nprocs)
-
-    do j = 1, ny_sub
-        do i = 1, nx_sub
-            d_sub(i, j) = d_sub_tr(j, i)
-        enddo
-    enddo
-
-    ! Gather solution and evaluate norm2
-    call MPI_Gatherv(d_sub, n_sub, MPI_DOUBLE_PRECISION, d_blk, cnt_all, disp_all, &
-                      MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
-
-    do iblk = 1, npx
-        do j = 1, ny
-            do i = 1, cnt_x(iblk)
-                d(i + disp_x(iblk), j) = &
-                    d_blk(i + (j - 1) * cnt_x(iblk) + disp_x(iblk) * ny)
+        if (is_root) then
+            do iblk = 1, npx
+                do j = 1, ny
+                    do i = 1, cnt_x(iblk)
+                        d(i + disp_x(iblk), j) = &
+                            d_blk(i + (j - 1) * cnt_x(iblk) + disp_x(iblk) * ny)
+                    enddo
+                enddo
             enddo
-        enddo
-    enddo
+            deallocate( d_blk )
+        endif
 
-    if (myrank.eq.0) then
-        print *, "Avg. norm2 (norm2 / (nx * ny)) = ", norm2(d - x) / nx / ny
-    endif
+    end subroutine collect_solution_array
 
+    subroutine dealloc_all
 
-    deallocate (a, b, c, d, x, d_blk)
-    deallocate (a_sub, b_sub, c_sub, d_sub)
-    deallocate (cnt_x, disp_x)
-    deallocate (cnt_y, disp_y)
-    deallocate (cnt_all, disp_all)
-
-    call mpi_topology_clean
-
-    call MPI_Finalize(ierr)
+        if (is_root) then
+            deallocate (d, x)
+        endif
+        deallocate (a_sub, b_sub, c_sub, d_sub)
+        deallocate (cnt_x, disp_x)
+        deallocate (cnt_y, disp_y)
+        deallocate (cnt_all, disp_all)
+    
+    end subroutine dealloc_all
 
 end program main
+
+integer function para_range_n(n1, n2, nprocs, myrank) result(n)
+
+    implicit none
+
+    integer, intent(in)     :: n1, n2, nprocs, myrank
+    integer :: remainder
+
+    n = int((n2 - n1 + 1) / nprocs)
+    remainder = mod(n2 - n1 + 1, nprocs)
+    if (remainder > myrank) then
+        n = n + 1
+    endif 
+
+end function para_range_n
 
 !> @brief       Module for creating the cartesian topology of the MPI processes and subcommunicators.
 !> @details     This module has three subcommunicators in each-direction and related subroutines.
@@ -221,6 +285,8 @@ module mpi_topology
         implicit none
         integer :: ierr
 
+        call MPI_Comm_free(comm_1d_x%mpi_comm, ierr)
+        call MPI_Comm_free(comm_1d_y%mpi_comm, ierr)
         call MPI_Comm_free(mpi_world_cart, ierr)
 
     end subroutine mpi_topology_clean

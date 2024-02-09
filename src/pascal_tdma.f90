@@ -477,7 +477,13 @@ module PaScaL_TDMA
         ! Temporary variables for computation and parameters for MPI functions
         double precision :: r
         integer :: i
-        integer :: request(4), ierr
+        integer :: request(4), ierr, errorcode
+
+        if (n_row.le.2) then
+            print '(a, i4)', "n_row = ", n_row
+            print '(a)', "n_row is too small. It should be greater than 2."
+            call MPI_Abort(MPI_COMM_WORLD, errorcode, ierr)
+        endif
 
         if (plan%nprocs.eq.1) then
 
@@ -573,8 +579,14 @@ module PaScaL_TDMA
         double precision, intent(inout)     :: A(1:n_row), B(1:n_row), C(1:n_row), D(1:n_row)
 
         ! Temporary variables for computation and parameters for MPI functions.
-        integer :: i, request(4), ierr
+        integer :: i, request(4), ierr, errorcode
         double precision :: rr
+
+        if (n_row.le.2) then
+            print '(a, i4)', "n_row = ", n_row
+            print '(a)', "n_row is too small. It should be greater than 2."
+            call MPI_Abort(MPI_COMM_WORLD, errorcode, ierr)
+        endif
 
         if (plan%nprocs.eq.1) then
 
@@ -675,8 +687,14 @@ module PaScaL_TDMA
 
         ! Temporary variables for computation and parameters for MPI functions.
         integer :: i, j
-        integer :: request(4),ierr
+        integer :: request(4), ierr, errorcode
         double precision :: r
+
+        if (n_row.le.2) then
+            print '(a, i4)', "n_row = ", n_row
+            print '(a)', "n_row is too small. It should be greater than 2."
+            call MPI_Abort(MPI_COMM_WORLD, errorcode, ierr)
+        endif
 
         if (plan%nprocs.eq.1) then
 
@@ -789,8 +807,14 @@ module PaScaL_TDMA
 
         ! Temporary variables for computation and parameters for MPI functions.
         integer :: i,j
-        integer :: request(4), ierr
+        integer :: request(4), ierr, errorcode
         double precision :: r
+
+        if (n_row.le.2) then
+            print '(a, i4)', "n_row = ", n_row
+            print '(a)', "n_row is too small. It should be greater than 2."
+            call MPI_Abort(MPI_COMM_WORLD, errorcode, ierr)
+        endif
 
         if (plan%nprocs.eq.1) then
 
@@ -901,8 +925,14 @@ module PaScaL_TDMA
 
         ! Temporary variables for computation and parameters for MPI functions.
         integer :: i, j
-        integer :: request(4),ierr
+        integer :: request(4),ierr, errorcode
         double precision :: r
+
+        if (n_row.le.2) then
+            print '(a, i4)', "n_row = ", n_row
+            print '(a)', "n_row is too small. It should be greater than 2."
+            call MPI_Abort(MPI_COMM_WORLD, errorcode, ierr)
+        endif
 
         if (plan%nprocs.eq.1) then
 
@@ -1017,11 +1047,16 @@ module PaScaL_TDMA
 
         ! Temporary variables for computation and parameters for MPI functions.
         integer :: i,j
-        integer :: request(4), ierr
+        integer :: request(4), ierr, errorcode
         double precision :: r
 
-        if (plan%nprocs.eq.1) then
+        if (n_row.le.2) then
+            print '(a, i4)', "n_row = ", n_row
+            print '(a)', "n_row is too small. It should be greater than 2."
+            call MPI_Abort(MPI_COMM_WORLD, errorcode, ierr)
+        endif
 
+        if (plan%nprocs.eq.1) then
             ! Solve the tridiagonal systems directly when nprocs = 1. 
             call tdma_cycl_many_rhs(A, B, C, D, n_sys, n_row)
         else
