@@ -58,6 +58,7 @@
 module PaScaL_TDMA
 
     use mpi
+    use omp_lib
 
     implicit none
 
@@ -71,6 +72,7 @@ module PaScaL_TDMA
         integer :: n_sys_rt         !< Number of tridiagonal systems that need to be solved in each process after transpose
         integer :: n_row_rt         !< Number of rows of a reduced tridiagonal systems after transpose
 
+        integer :: myrank           !< Current rank ID in the communicator of ptdma_world
         integer :: nprocs           !< Communicator size of ptdma_world
 
         !> @{ Send buffer related variables for MPI_Ialltoallw
@@ -112,7 +114,7 @@ module PaScaL_TDMA
 
         !> @{ Coefficient arrays after transpose of a reduced system, a: lower, b: diagonal, c: upper, d: rhs
         !>    The reduced dimension (2) changes to (2*np) after transpose.
-        double precision, allocatable, dimension(:) :: A_rt, B_rt, C_rt, D_rt
+        double precision, allocatable, dimension(:) :: A_rt, B_rt, C_rt, D_rt   !< Coefficient arrays, a: lower, b: diagonal, c: upper, d: rhs
         !> @}
 
     end type ptdma_plan_single
@@ -128,6 +130,7 @@ module PaScaL_TDMA
         integer :: n_row_rt         !< Number of rows of a reduced tridiagonal systems after transpose
 
         integer :: nprocs           !< Communicator size of ptdma_world
+        integer :: myrank               !< Current rank ID in the communicator of ptdma_world
 
         !> @{ Send buffer related variables for MPI_Ialltoallw
         integer, allocatable, dimension(:) :: ddtype_FS, count_send, displ_send
@@ -137,28 +140,51 @@ module PaScaL_TDMA
         integer, allocatable, dimension(:) :: ddtype_BS, count_recv, displ_recv
         !> @}
 
-        !> @{ Coefficient arrays after reduction, a: lower, b: diagonal, c: upper, d: rhs.
+        !> @{ Coefficient arrays after reduction, a: lower, b: diagonal, c: upper.
         !>    The orginal dimension (n) is reduced to (2)
         double precision, allocatable, dimension(:) :: A_rd, B_rd, C_rd
         !> @}
 
-        !> @{ Coefficient arrays after transpose of a reduced system, a: lower, b: diagonal, c: upper, d: rhs
+        !> @{ Coefficient arrays after transpose of a reduced system, a: lower, b: diagonal, c: upper.
         !>    The reduced dimension (2) changes to (2*np) after transpose.
         double precision, allocatable, dimension(:) :: A_rt, B_rt, C_rt
         !> @}
 
-        !> @{ Coefficient arrays after reduction, a: lower, b: diagonal, c: upper, d: rhs.
-        !>    The orginal dimension (m:n) is reduced to (m:2)
+        !> @{ Coefficient arrays after reduction, d: rhs.
+        !>    The orginal dimension (m:n) is reduced to (m:2).
         double precision, allocatable, dimension(:,:) :: D_rd     
-        !> @}
 
-        !> @{ Coefficient arrays after transpose of reduced systems, a: lower, b: diagonal, c: upper, d: rhs
+        !> @{ Coefficient arrays after transpose of reduced systems, d: rhs.
         !>    The reduced dimension (m:2) changes to (m/np: 2*np) after transpose.
         double precision, allocatable, dimension(:,:) :: D_rt 
         !> @}
 
     end type ptdma_plan_many_rhs
 
+
+    !> @brief   Execution plan for many tridiagonal systems of equations.
+    !> @details It uses MPI_Ialltoallw function to distribute the modified tridiagonal systems to MPI processes
+    !>          and build the reduced tridiagonal systems of equations. Derived datatypes are defined and used 
+    !>          to eliminate the cost of data packing and unpacking.
+    type, public :: ptdma_plan_many_thread_team
+
+        integer :: ptdma_world      !< Single dimensional subcommunicator to assemble data for the reduced TDMA
+        integer :: n_sys_rt         !< Number of tridiagonal systems that need to be solved in each process after transpose
+        integer :: n_row_rt         !< Number of rows of a reduced tridiagonal systems after transpose
+
+        integer :: nprocs           !< Communicator size of ptdma_world
+        integer :: myrank               !< Current rank ID in the communicator of ptdma_world
+
+        !> @{ Send buffer related variables for MPI_Ialltoallw
+        integer, allocatable, dimension(:) :: ddtype_FS, count_send, displ_send
+        !> @}
+
+        !> @{ Recv. buffer related variables MPI_Ialltoallw 
+        integer, allocatable, dimension(:) :: ddtype_BS, count_recv, displ_recv
+        !> @}
+
+    end type ptdma_plan_many_thread_team
+    
     private
 
     public  :: PaScaL_TDMA_plan_single_create
@@ -175,6 +201,11 @@ module PaScaL_TDMA
     public  :: PaScaL_TDMA_plan_many_rhs_destroy
     public  :: PaScaL_TDMA_many_rhs_solve
     public  :: PaScaL_TDMA_many_rhs_solve_cycle
+
+    public  :: PaScaL_TDMA_plan_many_create_thread_team
+    public  :: PaScaL_TDMA_plan_many_destroy_thread_team
+    public  :: PaScaL_TDMA_many_solve_thread_team
+    public  :: PaScaL_TDMA_many_solve_cycle_thread_team 
 
     contains
 
@@ -248,8 +279,6 @@ module PaScaL_TDMA
         integer :: ns_rt, nr_rt                             ! Dimensions of many reduced tridiagonal systems after transpose
         integer, allocatable, dimension(:):: ns_rt_array    ! Array specifying the number of tridiagonal systems for each process after transpose
 
-        plan%nprocs = nprocs
-
         ! Specify dimensions for reduced systems.
         ns_rd = n_sys
         nr_rd = 2
@@ -268,6 +297,8 @@ module PaScaL_TDMA
         plan%n_sys_rt = ns_rt
         plan%n_row_rt = nr_rt
         plan%ptdma_world = mpi_world
+        plan%nprocs = nprocs
+        plan%myrank = myrank
 
         allocate( plan%A_rd(1:ns_rd, 1:nr_rd) )
         allocate( plan%B_rd(1:ns_rd, 1:nr_rd) )
@@ -364,8 +395,6 @@ module PaScaL_TDMA
         integer :: ns_rt, nr_rt                             ! Dimensions of many reduced tridiagonal systems after transpose
         integer, allocatable, dimension(:):: ns_rt_array    ! Array specifying the number of tridiagonal systems for each process after transpose
 
-        plan%nprocs = nprocs
-
         ! Specify dimensions for reduced systems.
         ns_rd = n_sys
         nr_rd = 2
@@ -384,6 +413,8 @@ module PaScaL_TDMA
         plan%n_sys_rt = ns_rt
         plan%n_row_rt = nr_rt
         plan%ptdma_world = mpi_world
+        plan%myrank = myrank
+        plan%nprocs = nprocs
 
         allocate( plan%A_rd(1:nr_rd) )
         allocate( plan%B_rd(1:nr_rd) )
@@ -434,6 +465,82 @@ module PaScaL_TDMA
 
     end subroutine PaScaL_TDMA_plan_many_rhs_create
 
+    subroutine PaScaL_TDMA_plan_many_create_thread_team(plan, n_sys, myrank, nprocs, mpi_world)
+
+        implicit none
+
+        type(ptdma_plan_many_thread_team), intent(inout)  :: plan
+        integer, intent(in)     :: n_sys
+        integer, intent(in)     :: myrank, nprocs, mpi_world
+
+        integer :: i, ierr
+        integer :: ista, iend                               ! First and last indices of assigned range in many tridiagonal systems of equations 
+        integer :: bigsize(2), subsize(2), start(2)         ! Temporary variables of derived data type (DDT)
+        integer :: ns_rd, nr_rd                             ! Dimensions of many reduced tridiagonal systems
+        integer :: ns_rt, nr_rt                             ! Dimensions of many reduced tridiagonal systems after transpose
+        integer, allocatable, dimension(:):: ns_rt_array    ! Array specifying the number of tridiagonal systems for each process after transpose
+
+        ! Specify dimensions for reduced systems.
+        ns_rd = n_sys
+        nr_rd = 2
+
+        ! Specify dimensions for reduced systems after transpose.
+        ! ns_rt         : divide the number of tridiagonal systems of equations per each process  
+        ! ns_rt_array   : save the ns_rt in ns_rt_array for defining the DDT
+        ! nr_rt         : dimensions of the reduced tridiagonal systems in the solving direction, nr_rd*nprocs
+        call para_range(1, ns_rd, nprocs, myrank, ista, iend)
+        ns_rt = iend - ista + 1
+        allocate(ns_rt_array(0:nprocs-1))
+        call MPI_Allgather(ns_rt, 1, mpi_integer, ns_rt_array,1, mpi_integer, mpi_world, ierr)
+        nr_rt = nr_rd*nprocs
+
+        ! Assign plan variables and allocate coefficient arrays.
+        plan%n_sys_rt = ns_rt
+        plan%n_row_rt = nr_rt
+        plan%ptdma_world = mpi_world
+        plan%myrank = myrank
+        plan%nprocs = nprocs
+
+        ! Building the DDTs.
+        allocate(plan%ddtype_Fs(0:nprocs-1),  plan%ddtype_Bs(0:nprocs-1))
+
+        do i=0,nprocs-1
+            ! DDT for sending coefficients of the reduced tridiagonal systems using MPI_Ialltoallw communication.
+            bigsize(1)=ns_rd
+            bigsize(2)=nr_rd
+            subsize(1)=ns_rt_array(i)
+            subsize(2)=nr_rd
+            start(1)=sum(ns_rt_array(0:i)) - ns_rt_array(i)
+            start(2)=0
+            call MPI_Type_create_subarray(  2, bigsize, subsize, start,                     &
+                                            MPI_ORDER_FORTRAN, MPI_DOUBLE_PRECISION,        &
+                                            plan%ddtype_Fs(i), ierr )
+            call MPI_Type_commit(plan%ddtype_Fs(i), ierr)
+            ! DDT for receiving coefficients for the transposed systems of reduction using MPI_Ialltoallw communication.
+            bigsize(1)=ns_rt
+            bigsize(2)=nr_rt
+            subsize(1)=ns_rt
+            subsize(2)=nr_rd
+            start(1)=0
+            start(2)=nr_rd*i
+            call MPI_Type_create_subarray(  2, bigsize, subsize, start,                     &
+                                            MPI_ORDER_FORTRAN, MPI_DOUBLE_PRECISION,        &
+                                            plan%ddtype_Bs(i), ierr )
+            call MPI_Type_commit(plan%ddtype_Bs(i), ierr)
+        enddo
+
+        ! Buffer counts and displacements for MPI_Ialltoallw.
+        ! All buffer counts are 1 and displacements are 0 due to the defined DDT.
+        allocate(plan%count_send(0:nprocs-1), plan%displ_send(0:nprocs-1))
+        allocate(plan%count_recv(0:nprocs-1), plan%displ_recv(0:nprocs-1))
+        plan%count_send=1; plan%displ_send=0
+        plan%count_recv=1; plan%displ_recv=0
+
+        ! Deallocate local array.
+        if(allocated(ns_rt_array)) deallocate(ns_rt_array)
+
+    end subroutine PaScaL_TDMA_plan_many_create_thread_team
+
     !>
     !> @brief   Destroy the allocated arrays in the defined plan_many.
     !> @param   plan        Plan for many tridiagonal systems of equations
@@ -456,6 +563,23 @@ module PaScaL_TDMA
         deallocate(plan%A_rt, plan%B_rt, plan%C_rt, plan%D_rt)
 
     end subroutine PaScaL_TDMA_plan_many_rhs_destroy
+    
+    subroutine PaScaL_TDMA_plan_many_destroy_thread_team(plan,nprocs)
+        implicit none
+
+        type(ptdma_plan_many_thread_team), intent(inout)  :: plan
+        integer :: i,nprocs,ierr
+
+        do i=0,nprocs-1
+            call MPI_TYPE_FREE(plan%ddtype_Fs(i), ierr)
+            call MPI_TYPE_FREE(plan%ddtype_Bs(i), ierr)
+        enddo
+
+        deallocate(plan%ddtype_Fs,  plan%ddtype_Bs)
+        deallocate(plan%count_send, plan%displ_send)
+        deallocate(plan%count_recv, plan%displ_recv)
+
+    end subroutine PaScaL_TDMA_plan_many_destroy_thread_team
 
     !>
     !> @brief   Solve a single tridiagonal system of equation.
@@ -1145,5 +1269,289 @@ module PaScaL_TDMA
         endif
 
     end subroutine PaScaL_TDMA_many_rhs_solve_cycle
+
+    !>
+    !> @brief   Solve many tridiagonal systems of equations.
+    !> @param   plan        Plan for many tridiagonal systems of equations
+    !> @param   A           Coefficients in lower diagonal elements
+    !> @param   B           Coefficients in diagonal elements
+    !> @param   C           Coefficients in upper diagonal elements
+    !> @param   D           Coefficients in right-hand side terms
+    !> @param   n_sys       Number of tridiagonal systems per process
+    !> @param   n_row       Number of rows in each process, size of a tridiagonal matrix N divided by nprocs
+    !>
+    subroutine PaScaL_TDMA_many_solve_thread_team(plan, A, B, C, D, n_sys, n_row)
+
+        implicit none
+
+        type(ptdma_plan_many_thread_team), intent(inout)   :: plan
+        integer, intent(in)                 :: n_sys, n_row
+        double precision, intent(inout)     :: A(1:n_sys,1:n_row), B(1:n_sys,1:n_row), C(1:n_sys,1:n_row), D(1:n_sys,1:n_row)
+
+        ! Temporary variables for computation and parameters for MPI functions.
+        integer :: tid, nthds
+        integer :: i, j
+        integer :: request(4), ierr, errorcode
+        double precision :: r
+
+        double precision, allocatable       :: A_rd(:,:), B_rd(:,:), C_rd(:,:), D_rd(:,:)
+        double precision, allocatable       :: A_rt(:,:), B_rt(:,:), C_rt(:,:), D_rt(:,:)
+
+        if (n_row.le.2) then
+            print '(a, i4)', "n_row = ", n_row
+            print '(a)', "n_row is too small. It should be greater than 2."
+            call MPI_Abort(MPI_COMM_WORLD, errorcode, ierr)
+        endif
+
+        allocate( A_rd(n_sys, 2) )
+        allocate( B_rd(n_sys, 2) )
+        allocate( C_rd(n_sys, 2) )
+        allocate( D_rd(n_sys, 2) )
+
+        allocate( A_rt(plan%n_sys_rt, plan%n_row_rt) )
+        allocate( B_rt(plan%n_sys_rt, plan%n_row_rt) )
+        allocate( C_rt(plan%n_sys_rt, plan%n_row_rt) )
+        allocate( D_rt(plan%n_sys_rt, plan%n_row_rt) )
+
+        ! The modified Thomas algorithm : elimination of lower diagonal elements. 
+        ! First index indicates a number of independent many tridiagonal systems to use vectorization.
+        ! Second index indicates a row number in a partitioned tridiagonal system .
+        do i=1, n_sys
+            A(i,1) = A(i,1)/B(i,1)
+            D(i,1) = D(i,1)/B(i,1)
+            C(i,1) = C(i,1)/B(i,1)
+
+            A(i,2) = A(i,2)/B(i,2)
+            D(i,2) = D(i,2)/B(i,2)
+            C(i,2) = C(i,2)/B(i,2)
+        enddo
+    
+        do j=3, n_row
+            do i=1, n_sys
+                r    =    1.d0/(B(i,j)-A(i,j)*C(i,j-1))
+                D(i,j) =  r*(D(i,j)-A(i,j)*D(i,j-1))
+                C(i,j) =  r*C(i,j)
+                A(i,j) = -r*A(i,j)*A(i,j-1)
+            enddo
+        enddo
+    
+        ! The modified Thomas algorithm : elimination of upper diagonal elements.
+        do j=n_row-2, 2, -1
+            do i=1, n_sys
+                D(i,j) = D(i,j)-C(i,j)*D(i,j+1)
+                A(i,j) = A(i,j)-C(i,j)*A(i,j+1)
+                C(i,j) =-C(i,j)*C(i,j+1)
+            enddo
+        enddo
+
+        do i=1, n_sys
+            r = 1.d0/(1.d0-A(i,2)*C(i,1))
+            D(i,1) =  r*(D(i,1)-C(i,1)*D(i,2))
+            A(i,1) =  r*A(i,1)
+            C(i,1) = -r*C(i,1)*C(i,2)
+
+            ! Construct many reduced tridiagonal systems per each rank. Each process has two rows of reduced systems.
+            A_rd(i,1) = A(i,1); A_rd(i,2) = A(i,n_row)
+            B_rd(i,1) = 1.d0  ; B_rd(i,2) = 1.d0
+            C_rd(i,1) = C(i,1); C_rd(i,2) = C(i,n_row)
+            D_rd(i,1) = D(i,1); D_rd(i,2) = D(i,n_row)
+        enddo
+
+        tid = omp_get_thread_num()
+        nthds = omp_get_num_threads()
+
+        do i = 0, nthds-1
+            if(tid.eq.i) then
+                ! Transpose the reduced systems of equations for TDMA using MPI_Ialltoallw and DDTs.
+                call MPI_Ialltoallw(A_rd, plan%count_send, plan%displ_send, plan%ddtype_Fs, &
+                                    A_rt, plan%count_recv, plan%displ_recv, plan%ddtype_Bs, &
+                                    plan%ptdma_world, request(1), ierr)
+                call MPI_Ialltoallw(B_rd, plan%count_send, plan%displ_send, plan%ddtype_Fs, &
+                                    B_rt, plan%count_recv, plan%displ_recv, plan%ddtype_Bs, &
+                                    plan%ptdma_world, request(2), ierr)
+                call MPI_Ialltoallw(C_rd, plan%count_send, plan%displ_send, plan%ddtype_Fs, &
+                                    C_rt, plan%count_recv, plan%displ_recv, plan%ddtype_Bs, &
+                                    plan%ptdma_world, request(3), ierr)
+                call MPI_Ialltoallw(D_rd, plan%count_send, plan%displ_send, plan%ddtype_Fs, &
+                                    D_rt, plan%count_recv, plan%displ_recv, plan%ddtype_Bs, &
+                                    plan%ptdma_world, request(4), ierr)
+
+                call MPI_Waitall(4, request, MPI_STATUSES_IGNORE, ierr)
+            endif
+!$omp barrier
+        enddo
+
+        ! Solve the reduced tridiagonal systems of equations using Thomas algorithm.
+        call tdma_many(A_rt, B_rt, C_rt, D_rt, plan%n_sys_rt, plan%n_row_rt)
+
+        do i = 0, nthds-1
+            if(tid.eq.i) then
+                ! Transpose the obtained solutions to original reduced forms using MPI_Ialltoallw and DDTs.
+                call MPI_Ialltoallw(D_rt, plan%count_recv, plan%displ_recv, plan%ddtype_Bs, &
+                                    D_rd, plan%count_send, plan%displ_send, plan%ddtype_Fs, &
+                                    plan%ptdma_world, request(1), ierr)
+                call MPI_Waitall(1, request, MPI_STATUSES_IGNORE, ierr)
+            endif
+!$omp barrier
+        enddo
+
+        ! Update solutions of the modified tridiagonal system with the solutions of the reduced tridiagonal system.
+        do i=1,n_sys
+            D(i,1 )     = D_rd(i,1)
+            D(i,n_row)  = D_rd(i,2)
+        enddo
+
+        do j=2,n_row-1
+            do i=1,n_sys
+                D(i,j)  = D(i,j)-A(i,j)*D(i,1)-C(i,j)*D(i,n_row)
+            enddo
+        enddo
+
+        deallocate(A_rd, B_rd, C_rd, D_rd)
+        deallocate(A_rt, B_rt, C_rt, D_rt)
+
+    end subroutine PaScaL_TDMA_many_solve_thread_team
+
+    !>
+    !> @brief   Solve many tridiagonal systems of equations.
+    !> @param   plan        Plan for many tridiagonal systems of equations
+    !> @param   A           Coefficients in lower diagonal elements
+    !> @param   B           Coefficients in diagonal elements
+    !> @param   C           Coefficients in upper diagonal elements
+    !> @param   D           Coefficients in right-hand side terms
+    !> @param   n_sys       Number of tridiagonal systems per process
+    !> @param   n_row       Number of rows in each process, size of a tridiagonal matrix N divided by nprocs
+    !>
+    subroutine PaScaL_TDMA_many_solve_cycle_thread_team(plan, A, B, C, D, n_sys, n_row)
+
+        implicit none
+
+        type(ptdma_plan_many_thread_team), intent(inout)   :: plan
+        integer, intent(in)                 :: n_sys, n_row
+        double precision, intent(inout)     :: A(1:n_sys,1:n_row), B(1:n_sys,1:n_row), C(1:n_sys,1:n_row), D(1:n_sys,1:n_row)
+
+        ! Temporary variables for computation and parameters for MPI functions.
+        integer :: i,j
+        integer :: tid, nthds
+        integer :: request(4), ierr, errorcode
+        double precision :: r
+
+        double precision, allocatable       :: A_rd(:,:), B_rd(:,:), C_rd(:,:), D_rd(:,:)
+        double precision, allocatable       :: A_rt(:,:), B_rt(:,:), C_rt(:,:), D_rt(:,:)
+
+        if (n_row.le.2) then
+            print '(a, i4)', "n_row = ", n_row
+            print '(a)', "n_row is too small. It should be greater than 2."
+            call MPI_Abort(MPI_COMM_WORLD, errorcode, ierr)
+        endif
+
+        allocate( A_rd(n_sys, 2) )
+        allocate( B_rd(n_sys, 2) )
+        allocate( C_rd(n_sys, 2) )
+        allocate( D_rd(n_sys, 2) )
+
+        allocate( A_rt(plan%n_sys_rt, plan%n_row_rt) )
+        allocate( B_rt(plan%n_sys_rt, plan%n_row_rt) )
+        allocate( C_rt(plan%n_sys_rt, plan%n_row_rt) )
+        allocate( D_rt(plan%n_sys_rt, plan%n_row_rt) )
+
+        ! The modified Thomas algorithm : elimination of lower diagonal elements. 
+        ! First index indicates a number of independent many tridiagonal systems to use vectorization.
+        ! Second index indicates a row number in a partitioned tridiagonal system.
+        do i=1,n_sys
+            A(i,1) = A(i,1)/B(i,1)
+            D(i,1) = D(i,1)/B(i,1)
+            C(i,1) = C(i,1)/B(i,1)
+
+            A(i,2) = A(i,2)/B(i,2)
+            D(i,2) = D(i,2)/B(i,2)
+            C(i,2) = C(i,2)/B(i,2)
+        enddo
+    
+        do j=3,n_row
+            do i=1,n_sys
+                r =    1.d0/(B(i,j)-A(i,j)*C(i,j-1))
+                D(i,j) =  r*(D(i,j)-A(i,j)*D(i,j-1))
+                C(i,j) =  r*C(i,j)
+                A(i,j) = -r*A(i,j)*A(i,j-1)
+            enddo
+        enddo
+    
+        ! The modified Thomas algorithm : elimination of upper diagonal elements.
+        do j=n_row-2,2,-1
+            do i=1,n_sys
+                D(i,j) = D(i,j)-C(i,j)*D(i,j+1)
+                A(i,j) = A(i,j)-C(i,j)*A(i,j+1)
+                C(i,j) =-C(i,j)*C(i,j+1)
+            enddo
+        enddo
+
+        do i=1,n_sys
+            r = 1.d0/(1.d0-A(i,2)*C(i,1))
+            D(i,1) =  r*(D(i,1)-C(i,1)*D(i,2))
+            A(i,1) =  r*A(i,1)
+            C(i,1) = -r*C(i,1)*C(i,2)
+
+            ! Construct the reduced tridiagonal equations per each rank. Each process has two rows of reduced systems.
+            A_rd(i,1) = A(i,1); A_rd(i,2) = A(i,n_row)
+            B_rd(i,1) = 1.d0  ; B_rd(i,2) = 1.d0
+            C_rd(i,1) = C(i,1); C_rd(i,2) = C(i,n_row)
+            D_rd(i,1) = D(i,1); D_rd(i,2) = D(i,n_row)
+        enddo
+
+        tid = omp_get_thread_num()
+        nthds = omp_get_num_threads()
+
+        do i = 0, nthds-1
+            if(tid.eq.i) then
+                ! Transpose the reduced systems of equations for TDMA using MPI_Ialltoallw and DDTs.
+                call MPI_Ialltoallw(A_rd, plan%count_send, plan%displ_send, plan%ddtype_Fs, &
+                                    A_rt, plan%count_recv, plan%displ_recv, plan%ddtype_Bs, &
+                                    plan%ptdma_world, request(1), ierr)
+                call MPI_Ialltoallw(B_rd, plan%count_send, plan%displ_send, plan%ddtype_Fs, &
+                                    B_rt, plan%count_recv, plan%displ_recv, plan%ddtype_Bs, &
+                                    plan%ptdma_world, request(2), ierr)
+                call MPI_Ialltoallw(C_rd, plan%count_send, plan%displ_send, plan%ddtype_Fs, &
+                                    C_rt, plan%count_recv, plan%displ_recv, plan%ddtype_Bs, &
+                                    plan%ptdma_world, request(3), ierr)
+                call MPI_Ialltoallw(D_rd, plan%count_send, plan%displ_send, plan%ddtype_Fs, &
+                                    D_rt, plan%count_recv, plan%displ_recv, plan%ddtype_Bs, &
+                                    plan%ptdma_world, request(4), ierr)
+
+                call MPI_Waitall(4, request, MPI_STATUSES_IGNORE, ierr)
+            endif
+!$omp barrier
+        enddo
+
+        ! Solve the reduced cyclic tridiagonal systems of equations using cyclic TDMA.
+        call tdma_cycl_many(A_rt, B_rt, C_rt, D_rt, plan%n_sys_rt, plan%n_row_rt)
+
+        do i = 0, nthds-1
+            if(tid.eq.i) then
+                ! Transpose the obtained solutions to original reduced forms using MPI_Ialltoallw and DDTs.
+                call MPI_Ialltoallw(D_rt, plan%count_recv, plan%displ_recv, plan%ddtype_Bs, &
+                                    D_rd, plan%count_send, plan%displ_send, plan%ddtype_Fs, &
+                                    plan%ptdma_world, request(1), ierr)
+                call MPI_Waitall(1, request, MPI_STATUSES_IGNORE, ierr)
+            endif
+!$omp barrier
+        enddo
+
+        ! Update solutions of the modified tridiagonal system with the solutions of the reduced tridiagonal system.
+        do i=1,n_sys
+            D(i,1 )     = D_rd(i,1)
+            D(i,n_row)  = D_rd(i,2)
+        enddo
+
+        do j=2,n_row-1
+            do i=1,n_sys
+                D(i,j)  = D(i,j)-A(i,j)*D(i,1)-C(i,j)*D(i,n_row)
+            enddo
+        enddo
+
+        deallocate(A_rd, B_rd, C_rd, D_rd)
+        deallocate(A_rt, B_rt, C_rt, D_rt)
+
+    end subroutine PaScaL_TDMA_many_solve_cycle_thread_team
 
 end module PaScaL_TDMA

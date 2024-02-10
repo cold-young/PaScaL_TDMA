@@ -20,7 +20,7 @@ HOME := /Users/jihoon/Develop/PaScaL_TDMA
 
 FC = mpifort
 
-FLAG  = -fcheck=all -Og -g -cpp -Wall -fbacktrace -pedantic
+FLAG  = -fcheck=all -Og -g -cpp -Wall -fbacktrace -pedantic -fopenmp
 #FLAG  = -O3 -fPIC -cpp 
 #FLAG += -tp=skylake 
 

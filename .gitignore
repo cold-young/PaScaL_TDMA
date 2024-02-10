@@ -30,6 +30,7 @@
 *.exe
 *.out
 *.app
+convection_3D
 
 # output
 *.PLT
@@ -37,6 +38,7 @@
 
 # vscode
 .vscode
+*.json
 
 # Mac
 .DS_Store
