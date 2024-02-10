@@ -32,6 +32,9 @@ program main
         allocate (d(N)); d(:) = 0
         allocate (x(N)); x(:) = 0
         call build_global_coeff_array()
+    else
+        allocate ( d(0) )
+        allocate ( x(0) )
     endif
 
     call build_local_coeff_array()
@@ -107,9 +110,7 @@ contains
 
     subroutine dealloc_all
 
-        if(myrank.eq.0) then
-            deallocate (d, x)
-        endif 
+        deallocate (d, x)
         deallocate (cnt, disp)
         deallocate (a_sub, b_sub, c_sub, d_sub, x_sub)
 

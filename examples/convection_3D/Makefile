@@ -1,6 +1,6 @@
 include $(HOME)/Makefile.inc
 
-EXE = convection_3D
+EXE = convection_3D.out
 
 INC = $(HOME)/include
 LIB = $(HOME)/lib -lpascal_tdma

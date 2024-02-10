@@ -30,7 +30,6 @@
 *.exe
 *.out
 *.app
-convection_3D
 
 # output
 *.PLT

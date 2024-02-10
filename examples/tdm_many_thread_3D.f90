@@ -10,12 +10,12 @@ program main
     integer :: ny_sub, n_sub
     integer :: nprocs, myrank, ierr, errorcode, nthds
     integer :: para_range_n
-    integer :: ii, jj, kk
+    integer :: kk
     integer, allocatable, dimension(:) :: cnt_y, disp_y, cnt_all, disp_all
     logical :: is_root = .false.
 
     double precision, allocatable, dimension(:,:,:) :: d, x
-    double precision, allocatable, dimension(:,:,:) :: d_sub, d_sub_tr
+    double precision, allocatable, dimension(:,:,:) :: d_sub
     double precision, allocatable, dimension(:,:) :: ap, bp, cp, dp
 
     type(ptdma_plan_many_thread_team) :: py_many   ! Plan for many tridiagonal systems of equations
@@ -163,14 +163,14 @@ contains
                     enddo
                 enddo
             enddo
+        else
+            allocate ( d_blk(0) )
         endif
 
         allocate ( d_sub(nx, ny_sub, nz) ); d_sub(:,:,:) = 0
         call MPI_Scatterv(d_blk, cnt_all, disp_all, MPI_DOUBLE_PRECISION, d_sub, n_sub, &
                             MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
-        if (is_root) then
-            deallocate( d_blk )
-        endif
+        deallocate( d_blk )
 
     end subroutine distribute_rhs_array
 
@@ -181,6 +181,8 @@ contains
 
         if (is_root) then
             allocate ( d_blk(nx * ny * nz) ); d_blk(:) = 0
+        else
+            allocate ( d_blk(0) )
         endif
 
         ! Gather solution and evaluate norm2
@@ -200,6 +202,8 @@ contains
                 enddo
             enddo
         endif
+
+        deallocate( d_blk )
 
     end subroutine collect_solution_array
 
