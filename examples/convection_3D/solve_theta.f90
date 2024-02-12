@@ -29,8 +29,18 @@ module solve_theta
     private
 
     ! Communication buffer
-    !> @param       sbuf**          Buffer for MPI_Send in each direction and upper/lower GC
-    !> @param       rbuf**          Buffer for MPI_Recv in each direction and upper/lower GC
+    !> @param       sbuf_x0         Buffer for MPI_Send in each direction and upper/lower GC
+    !> @param       sbuf_x1         Buffer for MPI_Send in each direction and upper/lower GC
+    !> @param       sbuf_y0         Buffer for MPI_Send in each direction and upper/lower GC
+    !> @param       sbuf_y1         Buffer for MPI_Send in each direction and upper/lower GC
+    !> @param       sbuf_z0         Buffer for MPI_Send in each direction and upper/lower GC
+    !> @param       sbuf_z1         Buffer for MPI_Send in each direction and upper/lower GC
+    !> @param       rbuf_x0         Buffer for MPI_Recv in each direction and upper/lower GC
+    !> @param       rbuf_x1         Buffer for MPI_Recv in each direction and upper/lower GC
+    !> @param       rbuf_y0         Buffer for MPI_Recv in each direction and upper/lower GC
+    !> @param       rbuf_y1         Buffer for MPI_Recv in each direction and upper/lower GC
+    !> @param       rbuf_z0         Buffer for MPI_Recv in each direction and upper/lower GC
+    !> @param       rbuf_z1         Buffer for MPI_Recv in each direction and upper/lower GC
     double precision, allocatable, dimension(:,:), device   :: sbuf_x0(:,:), sbuf_x1(:,:), sbuf_y0(:,:), &
                                                                sbuf_y1(:,:), sbuf_z0(:,:), sbuf_z1(:,:)
     double precision, allocatable, dimension(:,:), device   :: rbuf_x0(:,:), rbuf_x1(:,:), rbuf_y0(:,:), &

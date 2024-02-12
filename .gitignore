@@ -41,3 +41,6 @@
 
 # Mac
 .DS_Store
+
+# doxygen
+doc_build

@@ -1,5 +1,5 @@
 !======================================================================================================================
-!> @file        pascal_tdma_cuda.cuf
+!> @file        pascal_tdma_cuda.f90
 !> @brief       PaScaL_TDMA - Parallel and Scalable Library for TriDiagonal Matrix Algorithm
 !> @details     PaScaL_TDMA includes a CUDA implementation of PaScaL_TDMA, which accelerates 
 !>              to solve many tridiagonal systems in multi-dimensional partial differential equations on GPU.
@@ -104,6 +104,7 @@ module PaScaL_TDMA_cuda
     !> @param   myrank      Rank ID in mpi_world
     !> @param   nprocs      Number of MPI process in mpi_world
     !> @param   mpi_world   Communicator for MPI_Gather and MPI_Scatter of reduced equations
+    !> @param   thread_in   The number of threads 
     !>
     subroutine PaScaL_TDMA_plan_many_create_cuda(p, nx_sys, ny_sys, nz_row, myrank, nprocs, mpi_world, thread_in)
 

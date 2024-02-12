@@ -352,6 +352,7 @@ module PaScaL_TDMA
     !>
     !> @brief   Destroy the allocated arrays in the defined plan_many.
     !> @param   plan        Plan for many tridiagonal systems of equations
+    !> @param   nprocs      Number of MPI process in mpi_world
     !>
     subroutine PaScaL_TDMA_plan_many_destroy(plan,nprocs)
         implicit none
@@ -544,6 +545,7 @@ module PaScaL_TDMA
     !>
     !> @brief   Destroy the allocated arrays in the defined plan_many.
     !> @param   plan        Plan for many tridiagonal systems of equations
+    !> @param   nprocs      Number of MPI process in mpi_world
     !>
     subroutine PaScaL_TDMA_plan_many_rhs_destroy(plan,nprocs)
         implicit none

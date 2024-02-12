@@ -1,5 +1,5 @@
 !======================================================================================================================
-!> @file        solve_theta_plan_many.f90
+!> @file        solve_theta_plan_many_thread_team.f90
 !> @brief       This file contains a solver subroutine for the example problem of PaScaL_TDMA.
 !> @details     The target example problem is the three-dimensional time-dependent heat conduction problem 
 !>              in a unit cube domain applied with the boundary conditions of vertically constant temperature 

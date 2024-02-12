@@ -1,5 +1,5 @@
 !=======================================================================================================================
-!> @file        tdmas_cuda.cuf
+!> @file        tdmas_cuda.f90
 !> @brief       CUDA version of tridiagonal matrix (TDM) solvers using the Thomas algorithm.
 !> @details     A single TDM solver and many TDM solver with non-cyclic and cyclic conditions.
 !>
