@@ -6,7 +6,7 @@ program main
 
     implicit none
 
-    integer :: nx = 10, ny = 10, nz = 20
+    integer :: nx = 20, ny = 20, nz = 20
     integer :: ny_sub, n_sub
     integer :: nprocs, myrank, ierr, errorcode, nthds
     integer :: para_range_n

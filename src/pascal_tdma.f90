@@ -236,7 +236,7 @@ module PaScaL_TDMA
         plan%ptdma_world = mpi_world
         plan%n_row_rt = nr_rt
 
-        allocate( plan%A_rd(1:nr_rd), plan%B_rd(1:nr_rd), plan%C_rd(1:nr_rd), plan%D_rd(1:nr_rd) )
+         allocate( plan%A_rd(1:nr_rd), plan%B_rd(1:nr_rd), plan%C_rd(1:nr_rd), plan%D_rd(1:nr_rd) )
         allocate( plan%A_rt(1:nr_rt), plan%B_rt(1:nr_rt), plan%C_rt(1:nr_rt), plan%D_rt(1:nr_rt) )
         
     end subroutine PaScaL_TDMA_plan_single_create
@@ -604,6 +604,7 @@ module PaScaL_TDMA
         double precision :: r
         integer :: i
         integer :: request(4), ierr, errorcode
+        integer :: statuses(MPI_STATUS_SIZE,4)
 
         if (n_row.le.2) then
             print '(a, i4)', "n_row = ", n_row
@@ -663,7 +664,7 @@ module PaScaL_TDMA
             call MPI_Igather(plan%D_rd, 2, MPI_DOUBLE_PRECISION, &
                             plan%D_rt, 2, MPI_DOUBLE_PRECISION, &
                             plan%gather_rank, plan%ptdma_world, request(4), ierr)
-            call MPI_Waitall(4, request, MPI_STATUSES_IGNORE, ierr)
+            call MPI_Waitall(4, request, statuses, ierr)
 
             ! Solve the reduced tridiagonal system on plan%gather_rank.
             if(plan%myrank == plan%gather_rank) then
@@ -675,7 +676,7 @@ module PaScaL_TDMA
                             plan%D_rd, 2, MPI_DOUBLE_PRECISION, &
                             plan%gather_rank, plan%ptdma_world, request(1), ierr)
 
-            call MPI_Waitall(1, request, MPI_STATUSES_IGNORE, ierr)
+            call MPI_Waitall(1, request, statuses, ierr)
 
             ! Update solutions of the modified tridiagonal system with the solutions of the reduced tridiagonal system.
             D(1 ) = plan%D_rd(1)
@@ -706,6 +707,7 @@ module PaScaL_TDMA
 
         ! Temporary variables for computation and parameters for MPI functions.
         integer :: i, request(4), ierr, errorcode
+        integer :: statuses(MPI_STATUS_SIZE,4)
         double precision :: rr
 
         if (n_row.le.2) then
@@ -768,7 +770,7 @@ module PaScaL_TDMA
                             plan%D_rt, 2, MPI_DOUBLE_PRECISION, &
                             plan%gather_rank, plan%ptdma_world, request(4), ierr)
 
-            call MPI_Waitall(4, request, MPI_STATUSES_IGNORE, ierr)
+            call MPI_Waitall(4, request, statuses, ierr)
 
             ! Solve the reduced cyclic tridiagonal system on plan%gather_rank.
             if(plan%myrank == plan%gather_rank) then
@@ -780,7 +782,7 @@ module PaScaL_TDMA
                             plan%D_rd, 2, MPI_DOUBLE_PRECISION, &
                             plan%gather_rank, plan%ptdma_world, request(1), ierr)
 
-            call MPI_Waitall(1, request, MPI_STATUSES_IGNORE, ierr)
+            call MPI_Waitall(1, request, statuses, ierr)
 
             ! Update solutions of the modified tridiagonal system with the solutions of the reduced tridiagonal system.
             D(1 ) = plan%D_rd(1)
@@ -814,6 +816,7 @@ module PaScaL_TDMA
         ! Temporary variables for computation and parameters for MPI functions.
         integer :: i, j
         integer :: request(4), ierr, errorcode
+        integer :: statuses(MPI_STATUS_SIZE, 4)
         double precision :: r
 
         if (n_row.le.2) then
@@ -887,7 +890,7 @@ module PaScaL_TDMA
                                 plan%D_rt, plan%count_recv, plan%displ_recv, plan%ddtype_Bs, &
                                 plan%ptdma_world, request(4), ierr)
 
-            call MPI_Waitall(4, request, MPI_STATUSES_IGNORE, ierr)
+            call MPI_Waitall(4, request, statuses, ierr)
 
             ! Solve the reduced tridiagonal systems of equations using Thomas algorithm.
             call tdma_many(plan%A_rt,plan%B_rt,plan%C_rt,plan%D_rt, plan%n_sys_rt, plan%n_row_rt)
@@ -896,7 +899,7 @@ module PaScaL_TDMA
             call MPI_Ialltoallw(plan%D_rt, plan%count_recv, plan%displ_recv, plan%ddtype_Bs, &
                                 plan%D_rd, plan%count_send, plan%displ_send, plan%ddtype_Fs, &
                                 plan%ptdma_world, request(1), ierr)
-            call MPI_Waitall(1, request, MPI_STATUSES_IGNORE, ierr)
+            call MPI_Waitall(1, request, statuses, ierr)
 
             ! Update solutions of the modified tridiagonal system with the solutions of the reduced tridiagonal system.
             do i=1,n_sys
@@ -934,6 +937,7 @@ module PaScaL_TDMA
         ! Temporary variables for computation and parameters for MPI functions.
         integer :: i,j
         integer :: request(4), ierr, errorcode
+        integer :: statuses(MPI_STATUS_SIZE,4)
         double precision :: r
 
         if (n_row.le.2) then
@@ -1005,7 +1009,7 @@ module PaScaL_TDMA
                                 plan%D_rt, plan%count_recv, plan%displ_recv, plan%ddtype_Bs, &
                                 plan%ptdma_world, request(4), ierr)
 
-            call MPI_Waitall(4, request, MPI_STATUSES_IGNORE, ierr)
+            call MPI_Waitall(4, request, statuses, ierr)
 
             ! Solve the reduced cyclic tridiagonal systems of equations using cyclic TDMA.
             call tdma_cycl_many(plan%A_rt, plan%B_rt, plan%C_rt, plan%D_rt, plan%n_sys_rt, plan%n_row_rt)
@@ -1014,7 +1018,7 @@ module PaScaL_TDMA
             call MPI_Ialltoallw(plan%D_rt, plan%count_recv, plan%displ_recv, plan%ddtype_Bs, &
                                 plan%D_rd, plan%count_send, plan%displ_send, plan%ddtype_Fs, &
                                 plan%ptdma_world, request(1), ierr)
-            call MPI_Waitall(1, request, MPI_STATUSES_IGNORE, ierr)
+            call MPI_Waitall(1, request, statuses, ierr)
 
             ! Update solutions of the modified tridiagonal system with the solutions of the reduced tridiagonal system.
             do i=1,n_sys
@@ -1052,6 +1056,7 @@ module PaScaL_TDMA
         ! Temporary variables for computation and parameters for MPI functions.
         integer :: i, j
         integer :: request(4),ierr, errorcode
+        integer :: statuses(MPI_STATUS_SIZE,4)
         double precision :: r
 
         if (n_row.le.2) then
@@ -1127,7 +1132,7 @@ module PaScaL_TDMA
                                 plan%D_rt, plan%count_recv, plan%displ_recv, plan%ddtype_Bs, &
                                 plan%ptdma_world, request(4), ierr)
 
-            call MPI_Waitall(4, request, MPI_STATUSES_IGNORE, ierr)
+            call MPI_Waitall(4, request, statuses, ierr)
 
             ! Solve the reduced tridiagonal systems of equations using Thomas algorithm.
             call tdma_many_rhs(plan%A_rt,plan%B_rt,plan%C_rt,plan%D_rt, plan%n_sys_rt, plan%n_row_rt)
@@ -1136,7 +1141,7 @@ module PaScaL_TDMA
             call MPI_Ialltoallw(plan%D_rt, plan%count_recv, plan%displ_recv, plan%ddtype_Bs, &
                                 plan%D_rd, plan%count_send, plan%displ_send, plan%ddtype_Fs, &
                                 plan%ptdma_world, request(1), ierr)
-            call MPI_Waitall(1, request, MPI_STATUSES_IGNORE, ierr)
+            call MPI_Waitall(1, request, statuses, ierr)
 
             ! Update solutions of the modified tridiagonal system with the solutions of the reduced tridiagonal system.
             do i=1,n_sys
@@ -1174,6 +1179,7 @@ module PaScaL_TDMA
         ! Temporary variables for computation and parameters for MPI functions.
         integer :: i,j
         integer :: request(4), ierr, errorcode
+        integer :: statuses(MPI_STATUS_SIZE,4)
         double precision :: r
 
         if (n_row.le.2) then
@@ -1246,7 +1252,7 @@ module PaScaL_TDMA
                                 plan%D_rt, plan%count_recv, plan%displ_recv, plan%ddtype_Bs, &
                                 plan%ptdma_world, request(4), ierr)
 
-            call MPI_Waitall(4, request, MPI_STATUSES_IGNORE, ierr)
+            call MPI_Waitall(4, request, statuses, ierr)
 
             ! Solve the reduced cyclic tridiagonal systems of equations using cyclic TDMA.
             call tdma_cycl_many_rhs(plan%A_rt, plan%B_rt, plan%C_rt, plan%D_rt, plan%n_sys_rt, plan%n_row_rt)
@@ -1255,7 +1261,7 @@ module PaScaL_TDMA
             call MPI_Ialltoallw(plan%D_rt, plan%count_recv, plan%displ_recv, plan%ddtype_Bs, &
                                 plan%D_rd, plan%count_send, plan%displ_send, plan%ddtype_Fs, &
                                 plan%ptdma_world, request(1), ierr)
-            call MPI_Waitall(1, request, MPI_STATUSES_IGNORE, ierr)
+            call MPI_Waitall(1, request, statuses, ierr)
 
             ! Update solutions of the modified tridiagonal system with the solutions of the reduced tridiagonal system.
             do i=1,n_sys
@@ -1294,6 +1300,7 @@ module PaScaL_TDMA
         integer :: tid, nthds
         integer :: i, j
         integer :: request(4), ierr, errorcode
+        integer :: statuses(MPI_STATUS_SIZE,4)
         double precision :: r
 
         double precision, allocatable       :: A_rd(:,:), B_rd(:,:), C_rd(:,:), D_rd(:,:)
@@ -1378,7 +1385,7 @@ module PaScaL_TDMA
                                     D_rt, plan%count_recv, plan%displ_recv, plan%ddtype_Bs, &
                                     plan%ptdma_world, request(4), ierr)
 
-                call MPI_Waitall(4, request, MPI_STATUSES_IGNORE, ierr)
+                call MPI_Waitall(4, request, statuses, ierr)
             endif
 !$omp barrier
         enddo
@@ -1392,7 +1399,7 @@ module PaScaL_TDMA
                 call MPI_Ialltoallw(D_rt, plan%count_recv, plan%displ_recv, plan%ddtype_Bs, &
                                     D_rd, plan%count_send, plan%displ_send, plan%ddtype_Fs, &
                                     plan%ptdma_world, request(1), ierr)
-                call MPI_Waitall(1, request, MPI_STATUSES_IGNORE, ierr)
+                call MPI_Waitall(1, request, statuses, ierr)
             endif
 !$omp barrier
         enddo
@@ -1436,6 +1443,7 @@ module PaScaL_TDMA
         integer :: i,j
         integer :: tid, nthds
         integer :: request(4), ierr, errorcode
+        integer :: statuses(MPI_STATUS_SIZE,4)
         double precision :: r
 
         double precision, allocatable       :: A_rd(:,:), B_rd(:,:), C_rd(:,:), D_rd(:,:)
@@ -1520,7 +1528,7 @@ module PaScaL_TDMA
                                     D_rt, plan%count_recv, plan%displ_recv, plan%ddtype_Bs, &
                                     plan%ptdma_world, request(4), ierr)
 
-                call MPI_Waitall(4, request, MPI_STATUSES_IGNORE, ierr)
+                call MPI_Waitall(4, request, statuses, ierr)
             endif
 !$omp barrier
         enddo
@@ -1534,7 +1542,7 @@ module PaScaL_TDMA
                 call MPI_Ialltoallw(D_rt, plan%count_recv, plan%displ_recv, plan%ddtype_Bs, &
                                     D_rd, plan%count_send, plan%displ_send, plan%ddtype_Fs, &
                                     plan%ptdma_world, request(1), ierr)
-                call MPI_Waitall(1, request, MPI_STATUSES_IGNORE, ierr)
+                call MPI_Waitall(1, request, statuses, ierr)
             endif
 !$omp barrier
         enddo
