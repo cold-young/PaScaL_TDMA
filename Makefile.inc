@@ -3,7 +3,8 @@
 # Modify flags according to the system and environment
 ###############################################################################
 
-HOME := /Users/jihoon/Develop/PaScaL_TDMA
+HOME := /home/chanyoung/Intern/PaScaL_TDMA
+MPI := /opt/nvidia/hpc_sdk/Linux_x86_64/24.3/comm_libs/12.3/openmpi4/openmpi-4.1.5
 # FC = mpiifort
 
 # FLAG  = -O3 -fPIC -cpp
@@ -18,10 +19,10 @@ HOME := /Users/jihoon/Develop/PaScaL_TDMA
 # Modify flags according to the system and environment
 ###############################################################################
 
-FC = mpifort
+FC = $(MPI)/bin/mpifort
 
-FLAG  = -fcheck=all -Og -g -cpp -Wall -fbacktrace -pedantic -fopenmp
-#FLAG  = -O3 -fPIC -cpp 
+#FLAG  = -fcheck=all -Og -g -cpp -Wall -fbacktrace -pedantic -fopenmp
+FLAG  = -O3 -fPIC -cpp 
 #FLAG += -tp=skylake 
 
 ###############################################################################

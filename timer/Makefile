@@ -18,7 +18,7 @@ inc: $(LIB)
 	cp $(OBJDIR)/*.mod $(HOME)/include
 
 $(OBJDIR)/%.o: %.f90
-	$(FC) $(FLAG) -c $^ -o $@  -J$(OBJDIR) -I$(OBJDIR)
+	$(FC) $(FLAG) -c $^ -o $@  -module $(OBJDIR) -I$(OBJDIR)
 $(OBJDIR)/%.o:$(OBJDIR)/%.mod
 
 %(PTDMA)	 : %(RANGE) %(TDMAS)
