@@ -3,7 +3,8 @@
 Prerequisites to compile PaScaL_TDMA are as follows:
 * MPI
 * fortran compiler ([`nvfortran`](https://developer.nvidia.com/hpc-sdk-downloads) for GPU runs, NVIDIA HPC SDK 21.1 or higher)
-    
+* If you do not use intel/nvidia compiler, change `Makefile` manually... 
+
 ### Option1: NVIDIA HPC SDK + nvfortran
 * Install `NVIDIA HPC SDK => 21.1` : [Link](https://developer.nvidia.com/hpc-sdk-downloads)
   * The NVIDIA HPC SDK includes a pre-compiled version of Open MPI.
@@ -21,9 +22,9 @@ Prerequisites to compile PaScaL_TDMA are as follows:
   export opt=module
   ```
 
-  * Add shortcuts (*Optional*)
+* Add shortcuts (*Optional*) 
   ```shell
-
+  # Also, change `24.3` to `Your SDK version`
   echo 'export NVARCH=`uname -s`_`uname -m`' >> ~/.bashrc
   echo 'alias  nvmpirun="/opt/nvidia/hpc_sdk/$NVARCH/24.3/comm_libs/mpi/bin/mpirun"' >> ~/.bashrc
 
@@ -41,7 +42,7 @@ Prerequisites to compile PaScaL_TDMA are as follows:
   nvmpirun -np 2 ex1_single.out
   ```
 
-### Option2: Intell + Open MPI
+### Option2: Intell + Open MPI(TBD)
   ```shell
   cd ~/PaScaL_TDMA
   export TDMA_PATH=$(pwd)
