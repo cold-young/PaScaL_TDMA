@@ -1,4 +1,4 @@
-include $(HOME)/Makefile.inc
+include $(TDMA_PATH)/Makefile.inc
 
 LIB = libpascal_tdma.a
 
@@ -21,20 +21,24 @@ all: $(LIB) inc
 
 $(LIB): $(OBJS)
 	ar qc $@ $(OBJS)
-	cp $@ $(HOME)/lib
+	cp $@ $(TDMA_PATH)/lib
 
 inc: $(LIB)
-	cp $(OBJDIR)/*.mod $(HOME)/include
+	cp $(OBJDIR)/*.mod $(TDMA_PATH)/include
 
 $(OBJDIR)/%.o: %.f90
-	$(FC) $(FLAG) -c $^ -o $@  -module $(OBJDIR) -I$(OBJDIR)
+	$(FC) $(FLAG) -c $^ -o $@  -$(opt) $(OBJDIR) -I$(OBJDIR)
 $(OBJDIR)/%.o: %.cuf
-	$(FC) $(FLAG) -c $^ -o $@  -module $(OBJDIR) -I$(OBJDIR)
+	$(FC) $(FLAG) -c $^ -o $@  -$(opt) $(OBJDIR) -I$(OBJDIR)
 $(OBJDIR)/%.o:$(OBJDIR)/%.mod
+
+
+# $(FC) $(FLAG) -c $^ -o $@  -module $(OBJDIR) -I$(OBJDIR)
+# $(FC) $(FLAG) -c $^ -o $@  -module $(OBJDIR) -I$(OBJDIR)
 
 %(PTDMA)	 : %(RANGE) %(TDMAS)
 
 clean:
-	rm -rf $(HOME)/lib $(HOME)/include *__genmod.f90 $(LIB)
+	rm -rf $(TDMA_PATH)/lib $(TDMA_PATH)/include *__genmod.f90 $(LIB)
 	rm -rf $(OBJDIR)
 

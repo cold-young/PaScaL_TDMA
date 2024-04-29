@@ -1,9 +1,9 @@
-include $(HOME)/Makefile.inc
+include $(TDMA_PATH)/Makefile.inc
 
 EXE = convection_3D.out
 
-INC = $(HOME)/include
-LIB = $(HOME)/lib -lpascal_tdma
+INC = $(TDMA_PATH)/include
+LIB = $(TDMA_PATH)/lib -lpascal_tdma
 
 global = global.o
 topology = mpi_topology.o 
@@ -15,7 +15,7 @@ OBJS   = $(global) $(topology) $(subdomain) $(THETA) $(main)
 
 all:$(OBJS)
 	$(FC) ${FLAG} ${OBJS} -o $(EXE) -I$(INC) -L$(LIB)
-	mv $(EXE) $(HOME)/run
+	mv $(EXE) $(TDMA_PATH)/run
 
 %.o: %.f90
 	$(FC) $(FLAG) -c $^ -o $@  -I$(INC)
@@ -26,4 +26,4 @@ all:$(OBJS)
 $(EXE)			: %(OBJS)
 
 clean:
-	rm -f *.mod *.o *__genmod.f90 $(HOME)/run/$(EXE) $(HOME)/run/*.PLT $(HOME)/run/*.dat
+	rm -f *.mod *.o *__genmod.f90 $(TDMA_PATH)/run/$(EXE) $(TDMA_PATH)/run/*.PLT $(TDMA_PATH)/run/*.dat

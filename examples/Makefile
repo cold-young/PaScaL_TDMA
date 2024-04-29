@@ -1,7 +1,7 @@
 include ../Makefile.inc
 
-INC = $(HOME)/include
-LIB = $(HOME)/lib -lpascal_tdma
+INC = $(TDMA_PATH)/include
+LIB = $(TDMA_PATH)/lib -lpascal_tdma
 
 EXE1= ex1_single.out
 EXE2= ex2_many_2D.out
