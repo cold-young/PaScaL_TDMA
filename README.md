@@ -47,7 +47,7 @@ git clone https://github.com/MPMC-Lab/PaScaL_TDMA.git
 Alternatively, the source files can be downloaded through github menu 'Download ZIP'.
 
 ## Compile
-### Prerequisites
+### [Prerequisites](./doc/install.md)
 Prerequisites to compile PaScaL_TDMA are as follows:
 * MPI
 * fortran compiler (`nvfortran` for GPU runs, NVIDIA HPC SDK 21.1 or higher)

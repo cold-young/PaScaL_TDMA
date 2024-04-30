@@ -18,6 +18,7 @@ Alternatively, the source files can be downloaded through github menu 'Download 
 Prerequisites to compile PaScaL_TDMA are as follows:
 * MPI
 * fortran compiler (`nvfortran` for GPU runs, NVIDIA HPC SDK 21.1 or higher)
+* See details for more information: [Compile](compile_page.html)
 
 ## Compile and build
 * Build PaScaL_TDMA
@@ -58,5 +59,5 @@ In the `tool` folder, there is a Python script `gpu_power_monitor.py` that can b
 
 | Previous          |                              Next |
 |:------------------|----------------------------------:|
-| [Introduction](index.html) | [Performance](perf_page.html) |
+| [Introduction](index.html) | [Compile](compile_page.html) |
 </div>

@@ -2,10 +2,9 @@
 # Compile setting with intel compiler and intel MPI.
 # Modify flags according to the system and environment
 ###############################################################################
+# Intel MPI
 
-# Pre-set TDMA_PATH and MPI (See prerequisites)
-# HOME := [Your Path]/PaScaL_TDMA
-# MPI := /opt/nvidia/hpc_sdk/Linux_x86_64/24.3/comm_libs/12.3/openmpi4/openmpi-4.1.5
+FC = mpiifort 
 
 # FLAG  = -O3 -fPIC -cpp
 # FLAG += -g
@@ -18,11 +17,13 @@
 # Compile setting with nvfortran and non-intel MPI.
 # Modify flags according to the system and environment
 ###############################################################################
+# Nvidia & OpenMPI
 
-FC = $(MPI)/bin/mpifort
+#FC = $(MPI)/bin/mpifort 
+#FC = mpifort 
 
-#FLAG  = -fcheck=all -Og -g -cpp -Wall -fbacktrace -pedantic -fopenmp
-FLAG  = -O3 -fPIC -cpp 
+FLAG  = -fcheck=all -Og -g -cpp -Wall -fbacktrace -pedantic -fopenmp ## Intel
+#FLAG  = -O3 -fPIC -cpp ## nvidia
 #FLAG += -tp=skylake 
 
 ###############################################################################

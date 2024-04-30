@@ -10,5 +10,5 @@ Performance                         {#perf_page}
 
 | Previous          |                              Next |
 |:------------------|----------------------------------:|
-| [Installation](install_page.html) | [Theory](theory_page.html) |
+| [Compile](compile_page.html) | [Theory](theory_page.html) |
 </div>
