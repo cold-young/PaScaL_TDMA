@@ -156,6 +156,7 @@ The main algorithm for a tridiagonal matrix consists of the following five steps
 - We construct build two-stage MPI communicators: intra-communicator belonging to inter-communicator. 
   - The root rank in the intra-communicator gathers data from the processes within the same intra-communicator.
   - Then, the root ranks in each intra-communicator read/write data from/to a single file using the MPI-IO through the inter-communicator.
+  
 
 # Reference
 <!-- [1] [J. Kim, P. Moin, J. Comput. Phys. 59 (2) (1985) 308–323.](https://www.sciencedirect.com/science/article/abs/pii/0021999185901482) -->
