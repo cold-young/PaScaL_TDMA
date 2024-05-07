@@ -26,8 +26,33 @@ Step 1 and Step 5 are similar to the method proposed by [Laszlo et al.(2016)](re
 
 # Features
 
-## Single and many tridiagonal systme
+## Single and many tridiagonal system
+
+### Single tridiagonal system
+\image html intro_2.png width=50%
+- A communication method using MPI_Gather for a single diagonal system.
+- \\(\texttt{PaScaL_TDMA_plan_single_create}\\): A subroutine to create a type variable of \\(\texttt{plan_single}\\), for a single tridiagonal system
+
+- \\(\texttt{PaScaL_TDMA_plan_single_destroy}\\): A subroutine to dellocate the \\(\texttt{plan_single}\\) and all associated data
+
+- \\(\texttt{PaScaL_TDMA_plan_single_solve}\\): A subroutine for solving a single tridiagonal system with the \\(\texttt{MPI_gather}\\) and \\(\texttt{MPI_scatter}\\) fuctions, as shown in upper figure
+
+### Many tridiagonal system
+\image html intro_1.png width=90%
+- The present method using MPI_Alltoall for many tridiagonal systems. 
+- \\(\texttt{PaScaL_TDMA_plan_many_create}\\):
+  A subroutine to create a type variable of \\(\texttt{plan_many}\\), for a many tridiagonal systems. The definition of the derived data type depends on the version of MPI library.
+
+- \\(\texttt{PaScaL_TDMA_plan_many_destroy}\\): A subroutine to dellocate the \\(\texttt{plan_many}\\) and all associated data
+
+- \\(\texttt{PaScaL_TDMA_plan_many_solve}\\): A subroutine for solving a many tridiagonal systems with the \\(\texttt{MPI_Alltoallw}\\) fuction, as shown in upper figure
+  
 ## MPI parallelization
+\image html intro_3.png width=90%
+- Distributed memory systems is required for large scale problem
+- The parallel computation of implicit method in distributed memory systems requires massive data communications
+- This leads to a major bottleneck in a large scale cluster system with distributed memories
+
 ## GPU implementation
 In PaScaL_TDMA 2.0, multi-GPU acceleration is implemented using NVIDIA CUDA. CUDA-related features are as follows:
 - (1) Incorporation of CUDA kernels into the loop structures of the existing algorithm, that are modified to exploit more GPU threads.
