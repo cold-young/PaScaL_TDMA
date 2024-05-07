@@ -70,10 +70,8 @@ The divide-and-conquer method of [Laszlo et al.(2016)](reference_page.html) is u
 
 - The soultion is the obtained by solving the reduced tridiagonal system and updating the remaining unknowns in the partitioned sub-matrices.
 
-### Hybrid Thomas-PCR
-- A hybrid Thomas-PCR method that directly reduces the unknowns using a modified Thomas algorithm and solves the reduced tridiagonal system using a PCR algorithm.
-
-\image html al2_modified_TA.png width=50%
+### PaScaL_TDMA algorithm
+\image html al3_PaScaL_TDMA.png width=55%
 
 
   1. Transforming the partitioned sub-matrices in the tridiagonal systems into modified sub-matrices 
@@ -94,69 +92,21 @@ The divide-and-conquer method of [Laszlo et al.(2016)](reference_page.html) is u
   * The amount of communication required is remarkably reduced
   * **Each core needs to communicate only for two rows**
 
-\image html eq_3.png width=50%
-
 **Step 3.** The reduced tridiagonal systems contributed in upper equation are solved by applying the Thomas algorithm.
 
-\image html eq_4.png width=50%
+\image html eq_3.png width=50%
 
-**Step 4.** The remaining unknowns of the modified sub-matrices in Step 1 are solved in each computing core with the solutions obtained in Step 3 and Step 4. 
+**Step 4.** Distributing the solution of reduced tridiagonal system.
+
+**Step 5.** The remaining unknowns of the modified sub-matrices in Step 1 are solved in each computing core with the solutions obtained in Step 3 and Step 4. 
+
+\image html eq_4.png width=50%
 
 # All-to-all communication
 
 - The newly designed communication scheme based on MPI Alltoallw acclerates to collect the rows and construct the reduced tridiagonal systems.
 
-\image html al3_PaScaL_TDMA.png width=60%
-
-The main algorithm for a tridiagonal matrix consists of the following five steps: 
-
-**Step 1.** Transform the partitioned submatrices in the tridiagonal systems into modified submatrices:
-        Each computing core transforms the partitioned submatrices in the tridiagonal systems of equations into the modified forms by applying `the modified Thomas algorithm`.
-
-**Step 2.** Construct reduced tridiagonal systems from the modified submatrices:
-        The reduced tridiagonal systems are constructed by collecting the first and last rows of the modified submatrices from each core using `MPI_Ialltoallw`.
-
 \image html fig1.png width=90%
-
-- PaScaL_TDMA reduces the amount of communication compared to conventional all-to-all scheme.
-
-
-**Step 3.** Solve the reduced tridiagonal systems:
-        The reduced tridiagonal systems constructed in `Step 2` are solved by applying `the Thomas algorithm`.
-
-**Step 4.** Distribute the solutions of the reduced tridiagonal systems:
-        The solutions of the reduced tridiagonal systems in `Step 3` are distributed to each core using `MPI_Ialltoallw`.
-        This communication is an exact inverse of the communication in `Step 2`.
-
-**Step 5.** Update the other unknowns in the modified tridiagonal systems:
-        The remaining unknowns in the modified submatrices in `Step 1` are solved in each computing core with the solutions obtained in `Step 3` and `Step 4`.
-
-
-### PaScaL_TDMA: Parallel and Scalable Library TriDiagonal Matrix Algorithm
-- PaScaL_TDMA is written in Fortran90 and implemented using module interfaces for easy application.
-
-- Massively parallel library to solve the tridiagonal systems of equations for distributed memory systems. 
-
-  - PaScaL_TDMA computes the large tridiagonal system by partitioning it into small sub-systems in a parallel manner 
-  - The dramatic decrease of total execution time with good strong and weak scalability
-
-\image html fig2.png
-
-- `Transpose 1` conducts the necessary data transpose for the next step.
-  - The number of transpose is equal to the number of FFT and TDMA
-  - It requires larger communication than `Transpose 2` inevitably.
-  
-- `Transpose 2` conducts a redundant transpose to retrieve the original decomposed shape. 
-  - Due to this redundant step, the size of communicator is kept no more than the number of MPI proccesses in each axis direction.
-  - This scheme can be more beneficial than `Transpose 1` when the number of MPI processes is huge.
-  
-
-\image html fig3.png width=50%
-
-- We construct build two-stage MPI communicators: intra-communicator belonging to inter-communicator. 
-  - The root rank in the intra-communicator gathers data from the processes within the same intra-communicator.
-  - Then, the root ranks in each intra-communicator read/write data from/to a single file using the MPI-IO through the inter-communicator.
-  
 
 
 

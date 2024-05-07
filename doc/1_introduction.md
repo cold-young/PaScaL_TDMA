@@ -47,10 +47,10 @@ In PaScaL_TDMA 2.0, multi-GPU acceleration is implemented using NVIDIA CUDA. CUD
 # Versions
 
 ## 1.0
-MPI parallelization
+MPI parallelization proposed by [Kim et al. (2021)](reference_page.html)
 
 ## 2.0
-GPU implementation
+GPU implementation proposed by [Yang et al. (2023)](reference_page.html)
 
 
 # Citation
