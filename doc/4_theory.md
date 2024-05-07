@@ -4,10 +4,7 @@ Theory                          {#theory_page}
 [TOC]
 # Thomas algorithm
 
- The Thomas algorithm is the best-known sequential tridiagonal matrix algorhtm (TDMA) that is commonly used to obtain the solution of a tridiagonal system. It is a special form of the Gaussian elimination algorithm for the diaonally dominant or symmetric positive definite (SPD) tridiagonal matrix. This algorithm has the ideal compuational complexity, $O(N)$. It greatly reduced to $O(N)$ instead of $O(N^3)$ for the Gauss elimination.
- 
- However, the Thomas algorithm for a tridiagonal system cannot be made parallel due to its sequential process during both elimination and substitution.
-
+ The Thomas algorithm is the best-known **sequential tridiagonal matrix algorhtm** (TDMA) that is commonly used to obtain the solution of a tridiagonal system. It is a special form of the Gaussian elimination algorithm for the diaonally dominant or symmetric positive definite (SPD) tridiagonal matrix. This algorithm has the ideal compuational complexity, \\(O(N)\\). It greatly reduced to \\(O(N)\\) instead of \\(O(N^3)\\) for the Gauss elimination.
 
 $$
 \begin{pmatrix}
@@ -25,8 +22,9 @@ d_0 \\\ d_1 \\\ d_2 \\\ d_3 \\\ \vdots \\\ d_{n-2} \\\ d_{n-1}
 \end{pmatrix},
 $$
 
-
 the Gaussian elimination procedure can be simplified as follows:
+
+\image html al1_TA.png width=40%
 
 1. Forward elimination
    
@@ -58,102 +56,108 @@ the Gaussian elimination procedure can be simplified as follows:
    \end{aligned}
    $$
 
+However, the Thomas algorithm for a tridiagonal system cannot be made parallel due to its sequential process during both elimination and substitution.
+
 
 # Modified Thomas algorithm
 
-<!-- ref 1의 내용. 행렬 batch 해서 N자 형태로 만들어서 계산하는 방법론까지 
-e-mail 사진이랑, PPT참고, 알록달록 행렬 이미지? latex추가 -->
-*I will revise below section..*
-
 The divide-and-conquer method [[1]](#reference) is used to solve partitioned tridiagonal systems of equations in the distributed memory system.
 
-Divide-and-conquer methods
+**Divide-and-conquer methods**
+
+- Divide-and-condquer methods have been utilized to solve many tridiagonal systems in a parallel manner. 
 - Large tridiagonal system is transformed into a reduced tridiagonal system through partial reduction in each partitioned sub-matrix, which are divided in computing cores. 
 
 - The soultion is the obtained by solving the reduced tridiagonal system and updating the remaining unknowns in the partitioned sub-matrices.
 
 ### Hybrid Thomas-PCR
-- Transforming the partitioned sub-matrices in the tridiagonal systems into modified sub-matrices 
-- Constructing reduced tridiagonal systems from the modified sub-matrices
-- Solving the reduced tridiagonal systems
-- Distributing the solution of reduced tridiagonal system
-- Updating the other unknowns
-  
-* Each computing core transforms the partitioned sub-matrices in the tridiagonal systems of equations into the modified forms by applying the modified Thomas algorithm.
+- A hybrid Thomas-PCR method that directly reduces the unknowns using a modified Thomas algorithm and solves the reduced tridiagonal system using a PCR algorithm.
 
-$$
-\begin{pmatrix}
-b^{\xi-1}_1 & c^{\xi-1}_1 &  &  &  &  &  &  &  &  &  & \\\ 
-a^{\xi-1}_2 & b^{\xi-1}_2 & c^{\xi-1}_2 &  &  &  &  &  &  &  &  & \\\ 
- & a^{\xi-1}_3 & b^{\xi-1}_3 & c^{\xi-1}_3 &  &  &  &  &  &  &  & \\\ 
- &  & a^{\xi-1}_4 & b^{\xi-1}_4 & c^{\xi-1}_4 &  &  &  &  &  &  & \\\ 
- &  &  & a^{\xi}_1 & b^{\xi}_1 & c^{\xi}_1 &  &  &  &  &  & \\\ 
- &  &  &  & a^{\xi}_2 & b^{\xi}_2 & c^{\xi}_2 &  &  &  &  & \\\ 
- &  &  &  &  & a^{\xi}_3 & b^{\xi}_3 & c^{\xi}_3 &  &  &  & \\\ 
- &  &  &  &  &  & a^{\xi}_4 & b^{\xi}_4 & c^{\xi}_4 &  &  &\\\ 
- &  &  &  &  &  &  & a^{\xi+1}_1 & b^{\xi+1}_1 & c^{\xi+1}_1 &  &\\\ 
- &  &  &  &  &  &  &  & a^{\xi+1}_2 & b^{\xi+1}_2 & c^{\xi+1}_2 &\\\ 
- &  &  &  &  &  &  &  &  & a^{\xi+1}_3 & b^{\xi+1}_3 & c^{\xi+1}_3\\\ 
- &  &  &  &  &  &  &  &  &  & a^{\xi+1}_4 & b^{\xi+1}_4
-\end{pmatrix} \begin{pmatrix}
-x^{\xi-1}_1\\\ 
-x^{\xi-1}_2\\\ 
-x^{\xi-1}_3\\\ 
-x^{\xi-1}_4\\\ 
-x^{\xi}_1\\\ 
-x^{\xi}_2\\\ 
-x^{\xi}_3\\\ 
-x^{\xi}_4\\\ 
-x^{\xi+1}_1\\\ 
-x^{\xi+1}_2\\\ 
-x^{\xi+1}_3\\\
-x^{\xi+1}_4 
-\end{pmatrix} = 
-\begin{pmatrix}
-d^{\xi-1}_1\\\ 
-d^{\xi-1}_2\\\ 
-d^{\xi-1}_3\\\ 
-d^{\xi-1}_4\\\ 
-d^{\xi}_1\\\ 
-d^{\xi}_2\\\ 
-d^{\xi}_3\\\ 
-d^{\xi}_4\\\ 
-d^{\xi+1}_1\\\ 
-d^{\xi+1}_2\\\ 
-d^{\xi+1}_3\\\
-d^{\xi+1}_4 
-\end{pmatrix}
-$$
+\image html al2_modified_TA.png width=50%
 
-<img src = "./imgs/eq_1.png">
-<img src = "./imgs/eq_2.png">
-<img src = "./imgs/eq_3.png">
-<img src = "./imgs/eq_4.png">
+
+  1. Transforming the partitioned sub-matrices in the tridiagonal systems into modified sub-matrices 
+  2. Constructing reduced tridiagonal systems from the modified sub-matrices
+  3. Solving the reduced tridiagonal systems
+  4. Distributing the solution of reduced tridiagonal system
+  5. Updating the other unknowns
+
+
+\image html eq_1.png width=80%
+
+**Step 1.** Each computing core transforms the partitioned sub-matrices in the tridiagonal systems of equations into the modified forms by applying the modified Thomas algorithm [[1]](#reference).
+
+\image html eq_2.png width=80%
+
+**Step 2.** The reduced tridiagonal systems are contributed by collecting the first and last row.
+* Data communication is still required
+  * The amount of communication required is remarkably reduced
+  * **Each core needs to communicate only for two rows**
+
+\image html eq_3.png width=50%
+
+**Step 3.** The reduced tridiagonal systems contributed in upper equation are solved by applying the Thomas algorithm.
+
+\image html eq_4.png width=50%
+
+**Step 4.** The remaining unknowns of the modified sub-matrices in Step 1 are solved in each computing core with the solutions obtained in Step 3 and Step 4. 
 
 # All-to-all communication
-*I will revise below section..*
-
-Reduced all-to-all communication
 
 - The newly designed communication scheme based on MPI Alltoallw acclerates to collect the rows and construct the reduced tridiagonal systems.
 
+\image html al3_PaScaL_TDMA.png width=60%
+
 The main algorithm for a tridiagonal matrix consists of the following five steps: 
 
-- (1) Transform the partitioned submatrices in the tridiagonal systems into modified submatrices:
-        Each computing core transforms the partitioned submatrices in the tridiagonal systems of equations into the modified forms by applying modified Thomas algorithm.
-- (2) Construct reduced tridiagonal systems from the modified submatrices:
-        The reduced tridiagonal systems are constructed by collecting the first and last rows of the modified submatrices from each core using MPI_Ialltoallw.
-- (3) Solve the reduced tridiagonal systems:
-        The reduced tridiagonal systems constructed in Step 2 are solved by applying the Thomas algorithm.
-- (4) Distribute the solutions of the reduced tridiagonal systems:
-        The solutions of the reduced tridiagonal systems in Step 3 are distributed to each core using MPI_Ialltoallw.
-        This communication is an exact inverse of the communication in Step 2.
-- (5) Update the other unknowns in the modified tridiagonal systems:
-        The remaining unknowns in the modified submatrices in Step 1 are solved in each computing core with the solutions obtained in Step 3 and Step 4.
-<!-- 
-연구 contribution. 위 내용을 all2all communication이용해서 병렬로, 많은 연산 빠르게 할 수 있다는 내용. paper, PPT참고, 그 데이터 쌓인 3d figure 같이 첨부 -->
+**Step 1.** Transform the partitioned submatrices in the tridiagonal systems into modified submatrices:
+        Each computing core transforms the partitioned submatrices in the tridiagonal systems of equations into the modified forms by applying `the modified Thomas algorithm`.
 
-## Reference
+**Step 2.** Construct reduced tridiagonal systems from the modified submatrices:
+        The reduced tridiagonal systems are constructed by collecting the first and last rows of the modified submatrices from each core using `MPI_Ialltoallw`.
+
+\image html fig1.png width=90%
+
+- PaScaL_TDMA reduces the amount of communication compared to conventional all-to-all scheme.
+
+
+**Step 3.** Solve the reduced tridiagonal systems:
+        The reduced tridiagonal systems constructed in `Step 2` are solved by applying `the Thomas algorithm`.
+
+**Step 4.** Distribute the solutions of the reduced tridiagonal systems:
+        The solutions of the reduced tridiagonal systems in `Step 3` are distributed to each core using `MPI_Ialltoallw`.
+        This communication is an exact inverse of the communication in `Step 2`.
+
+**Step 5.** Update the other unknowns in the modified tridiagonal systems:
+        The remaining unknowns in the modified submatrices in `Step 1` are solved in each computing core with the solutions obtained in `Step 3` and `Step 4`.
+
+
+### PaScaL_TDMA: Parallel and Scalable Library TriDiagonal Matrix Algorithm
+- PaScaL_TDMA is written in Fortran90 and implemented using module interfaces for easy application.
+
+- Massively parallel library to solve the tridiagonal systems of equations for distributed memory systems. 
+
+  - PaScaL_TDMA computes the large tridiagonal system by partitioning it into small sub-systems in a parallel manner 
+  - The dramatic decrease of total execution time with good strong and weak scalability
+
+\image html fig2.png
+
+- `Transpose 1` conducts the necessary data transpose for the next step.
+  - The number of transpose is equal to the number of FFT and TDMA
+  - It requires larger communication than `Transpose 2` inevitably.
+  
+- `Transpose 2` conducts a redundant transpose to retrieve the original decomposed shape. 
+  - Due to this redundant step, the size of communicator is kept no more than the number of MPI proccesses in each axis direction.
+  - This scheme can be more beneficial than `Transpose 1` when the number of MPI processes is huge.
+  
+
+\image html fig3.png width=50%
+
+- We construct build two-stage MPI communicators: intra-communicator belonging to inter-communicator. 
+  - The root rank in the intra-communicator gathers data from the processes within the same intra-communicator.
+  - Then, the root ranks in each intra-communicator read/write data from/to a single file using the MPI-IO through the inter-communicator.
+
+# Reference
 <!-- [1] [J. Kim, P. Moin, J. Comput. Phys. 59 (2) (1985) 308–323.](https://www.sciencedirect.com/science/article/abs/pii/0021999185901482) -->
 [[1] Laszlo, E., Giles, M., & Appleyard, J. (2016). Manycore algorithms for batch scalar and block tridiagonal solvers. ACM Transactions on Mathematical Software (TOMS), 42(4), 1-36.](https://www.sciencedirect.com/science/article/abs/pii/0021999185901482) 
 

@@ -25,7 +25,6 @@ Prerequisites to compile PaScaL_TDMA are as follows:
   export PATH=$PATH:/opt/nvidia/hpc_sdk/$NVARCH/24.3/compilers/bin
   export opt=module
   ```
-  * (TBD) Will write shell script ..
   
 * Add shortcuts (*Optional*) 
   
