@@ -61,7 +61,7 @@ However, the Thomas algorithm for a tridiagonal system cannot be made parallel d
 
 # Modified Thomas algorithm
 
-The divide-and-conquer method [[1]](#reference) is used to solve partitioned tridiagonal systems of equations in the distributed memory system.
+The divide-and-conquer method of [Laszlo et al.(2016)](reference_page.html) is used to solve partitioned tridiagonal systems of equations in the distributed memory system.
 
 **Divide-and-conquer methods**
 
@@ -85,7 +85,7 @@ The divide-and-conquer method [[1]](#reference) is used to solve partitioned tri
 
 \image html eq_1.png width=80%
 
-**Step 1.** Each computing core transforms the partitioned sub-matrices in the tridiagonal systems of equations into the modified forms by applying the modified Thomas algorithm [[1]](#reference).
+**Step 1.** Each computing core transforms the partitioned sub-matrices in the tridiagonal systems of equations into the modified forms by applying the modified Thomas algorithm of [Laszlo et al.(2016)](reference_page.html).
 
 \image html eq_2.png width=80%
 
@@ -158,9 +158,7 @@ The main algorithm for a tridiagonal matrix consists of the following five steps
   - Then, the root ranks in each intra-communicator read/write data from/to a single file using the MPI-IO through the inter-communicator.
   
 
-# Reference
-<!-- [1] [J. Kim, P. Moin, J. Comput. Phys. 59 (2) (1985) 308–323.](https://www.sciencedirect.com/science/article/abs/pii/0021999185901482) -->
-[[1] Laszlo, E., Giles, M., & Appleyard, J. (2016). Manycore algorithms for batch scalar and block tridiagonal solvers. ACM Transactions on Mathematical Software (TOMS), 42(4), 1-36.](https://www.sciencedirect.com/science/article/abs/pii/0021999185901482) 
+
 
 <div class="section_buttons">
 

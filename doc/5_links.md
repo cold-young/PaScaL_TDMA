@@ -12,5 +12,5 @@ Links                               {#link_page}
 
 | Previous          |                              Next |
 |:------------------|----------------------------------:|
-| [Theory](theory_page.html) | [Home](index.html) |
+| [Theory](theory_page.html) | [Reference](#reference_page.html) |
 </div>

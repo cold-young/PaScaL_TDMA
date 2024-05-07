@@ -5,7 +5,7 @@ Introduction                       {#intro_page}
 # Overview
 Parallel and Scalable Library for TriDiagonal Matrix Algorithm
 
-PaScaL_TDMA provides an efficient and scalable computational procedure to solve many tridiagonal systems in multi-dimensional partial differential equations. The modified Thomas algorithm proposed by Laszlo et al.(2016) and the newly designed communication scheme have been used to reduce the communication overhead in solving many tridiagonal systems.
+PaScaL_TDMA provides an efficient and scalable computational procedure to solve many tridiagonal systems in multi-dimensional partial differential equations. The modified Thomas algorithm proposed by [Laszlo et al.(2016)](reference_page.html) and the newly designed communication scheme have been used to reduce the communication overhead in solving many tridiagonal systems.
 
 This library is for both single and many tridiagonal systems of equations. The main algorithm for a tridiagonal matrix consists of the following five steps: 
 
