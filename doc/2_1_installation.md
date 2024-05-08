@@ -41,9 +41,10 @@ The `Makefile` in root directory is to compile the source code, and is expected 
 
 # Running the example
 After building the example file, an executable binary, `*.out`, is built in the `run` folder. The `PARA_INPUT.inp` file in the `run` folder is a pre-defined input file, and the `*.out` can be executed as follows:
-    ```
-	mpirun -np 8 ./a.out ./PARA_INPUT.inp
-    ```
+
+```
+mpirun -np 8 ./a.out ./PARA_INPUT.inp
+```
 # GPU power monitoring
 In the `tool` folder, there is a Python script `gpu_power_monitor.py` that can be used to monitor and print real-time GPU power usage with timestamps. To use this script, you will need to install the `pynvml` library.
 
