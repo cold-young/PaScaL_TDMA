@@ -23,8 +23,8 @@ d_0 \\\ d_1 \\\ d_2 \\\ d_3 \\\ \vdots \\\ d_{n-2} \\\ d_{n-1}
 $$
 
 the Gaussian elimination procedure can be simplified as follows:
-
-\image html al1_TA.png width=40%
+<div class="darkmode_inverted_image">\image html al1_TA.png width=40%</div>
+<!-- \image html al1_TA.png width=40% -->
 
 1. Forward elimination
    
@@ -71,7 +71,8 @@ The divide-and-conquer method of [Laszlo et al.(2016)](reference_page.html) is u
 - The soultion is the obtained by solving the reduced tridiagonal system and updating the remaining unknowns in the partitioned sub-matrices.
 
 ### PaScaL_TDMA algorithm
-\image html al3_PaScaL_TDMA.png width=55%
+<!-- \image html al3_PaScaL_TDMA.png width=55% -->
+<div class="darkmode_inverted_image">al3_PaScaL_TDMA.png width=55%</div>
 
 
   1. Transforming the partitioned sub-matrices in the tridiagonal systems into modified sub-matrices 
@@ -85,7 +86,7 @@ The divide-and-conquer method of [Laszlo et al.(2016)](reference_page.html) is u
 
 **Step 1.** Each computing core transforms the partitioned sub-matrices in the tridiagonal systems of equations into the modified forms by applying the modified Thomas algorithm of [Laszlo et al.(2016)](reference_page.html).
 
-\image html eq_2.png width=80%
+<div class="darkmode_inverted_image">\image html eq_2.png width=80%</div>
 
 **Step 2.** The reduced tridiagonal systems are contributed by collecting the first and last row.
 * Data communication is still required
@@ -94,19 +95,22 @@ The divide-and-conquer method of [Laszlo et al.(2016)](reference_page.html) is u
 
 **Step 3.** The reduced tridiagonal systems contributed in upper equation are solved by applying the Thomas algorithm.
 
-\image html eq_3.png width=50%
+<!-- \image html eq_3.png width=50% -->
+<div class="darkmode_inverted_image">\image html eq_3.png width=50%</div>
 
 **Step 4.** Distributing the solution of reduced tridiagonal system.
 
 **Step 5.** The remaining unknowns of the modified sub-matrices in Step 1 are solved in each computing core with the solutions obtained in Step 3 and Step 4. 
 
-\image html eq_4.png width=50%
+<!-- \image html eq_4.png width=50% -->
+<div class="darkmode_inverted_image">\image html eq_4.png width=50%</div>
 
 # All-to-all communication
 
 - The newly designed communication scheme based on MPI Alltoallw acclerates to collect the rows and construct the reduced tridiagonal systems.
 
-\image html fig1.png width=90%
+<div class="darkmode_inverted_image">\image html theory_1.png width=90%</div>
+<!-- \image html theory_1.png width=90% -->
 
 
 

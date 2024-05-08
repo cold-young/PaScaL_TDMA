@@ -27,9 +27,8 @@ Step 1 and Step 5 are similar to the method proposed by [Laszlo et al.(2016)](re
 # Features
 
 ## Single and many tridiagonal system
-
 ### Single tridiagonal system
-\image html intro_2.png width=50%
+<div class="darkmode_inverted_image">\image html intro_2.png width=50%</div>
 - A communication method using MPI_Gather for a single diagonal system.
 - \\(\texttt{PaScaL_TDMA_plan_single_create}\\): A subroutine to create a type variable of \\(\texttt{plan_single}\\), for a single tridiagonal system
 
@@ -38,7 +37,7 @@ Step 1 and Step 5 are similar to the method proposed by [Laszlo et al.(2016)](re
 - \\(\texttt{PaScaL_TDMA_plan_single_solve}\\): A subroutine for solving a single tridiagonal system with the \\(\texttt{MPI_gather}\\) and \\(\texttt{MPI_scatter}\\) fuctions, as shown in upper figure
 
 ### Many tridiagonal system
-\image html intro_1.png width=90%
+<div class="darkmode_inverted_image">\image html intro_1.png width=90%</div>
 - The present method using MPI_Alltoall for many tridiagonal systems. 
 - \\(\texttt{PaScaL_TDMA_plan_many_create}\\):
   A subroutine to create a type variable of \\(\texttt{plan_many}\\), for a many tridiagonal systems. The definition of the derived data type depends on the version of MPI library.
@@ -47,8 +46,9 @@ Step 1 and Step 5 are similar to the method proposed by [Laszlo et al.(2016)](re
 
 - \\(\texttt{PaScaL_TDMA_plan_many_solve}\\): A subroutine for solving a many tridiagonal systems with the \\(\texttt{MPI_Alltoallw}\\) fuction, as shown in upper figure
   
+
 ## MPI parallelization
-\image html intro_3.png width=90%
+<div class="darkmode_inverted_image">\image html intro_3.png width=90%</div>
 - Distributed memory systems is required for large scale problem
 - The parallel computation of implicit method in distributed memory systems requires massive data communications
 - This leads to a major bottleneck in a large scale cluster system with distributed memories
@@ -70,12 +70,15 @@ In PaScaL_TDMA 2.0, multi-GPU acceleration is implemented using NVIDIA CUDA. CUD
 - Jung-Il Choi (jic@yonsei.ac.kr), School of Mathematics and Computing (Computational Science and Engineering), Yonsei University (v1.0, v2.0)
 
 # Versions
+<div class="tabbed">
 
-## 1.0
-MPI parallelization proposed by [Kim et al. (2021)](reference_page.html)
+- <b class="tab-title">1.0</b>
+    - MPI parallelization proposed by [Kim et al. (2021)](reference_page.html)
+    
+- <b class="tab-title">2.0</b>
+    - GPU implementation proposed by [Yang et al. (2023)](reference_page.html)
 
-## 2.0
-GPU implementation proposed by [Yang et al. (2023)](reference_page.html)
+</div>
 
 
 # Citation
@@ -109,6 +112,17 @@ Please use the following bibtex, when you refer to this project.
         url    = "https://github.com/MPMC-Lab/PaScaL_TDMA",
         year   = "2019"
     }
+
+## Credits
+
+Thanks for writing this library and inspiring feedback on GitHub!
+
+Special thanks to all the contributors:
+<br><br>
+<a href="https://github.com/cold-young/PaScaL_TDMA/graphs/contributors">
+    <img src="https://contrib.rocks/image?repo=cold-young/PaScaL_TDMA" />
+</a>
+
 
 <div class="section_buttons">
 

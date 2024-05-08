@@ -14,11 +14,12 @@ Alternatively, the source files can be downloaded through github menu 'Download 
 
 
 # Compile
+@note See detail for more information: [here](compile_page.html). 
+
 ## Prerequisites
 Prerequisites to compile PaScaL_TDMA are as follows:
 * MPI
-* fortran compiler (`nvfortran` for GPU runs, NVIDIA HPC SDK 21.1 or higher)
-* See details for more information: [Compile](compile_page.html)
+* fortran compiler (`nvfortran` for GPU runs, NVIDIA HPC SDK 21.1 or higher)  
 
 ## Compile and build
 * Build PaScaL_TDMA

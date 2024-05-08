@@ -67,7 +67,7 @@ PROJECT_LOGO           = doc/home.png
 # when the HTML document is shown. Doxygen will copy the logo to the output
 # directory.
 
-PROJECT_ICON           = doc/home.ico
+PROJECT_ICON           = doc/home.png
 
 # The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute) path
 # into which the generated documentation will be written. If a relative path is
